@@ -2,3 +2,4 @@ numpy
 scipy
 sounddevice
 pytest
+mido

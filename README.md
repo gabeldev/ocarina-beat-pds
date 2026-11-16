@@ -42,7 +42,7 @@ Descrição curta:
 
 - Entrada por **ocarina física** via microfone.
 - Uma nota por vez, sem acordes.
-- Repertório de **3 a 4 canções de *The Legend of Zelda: Ocarina of Time***, curtas (5 a 8 notas). Se o repertório permitir, incluir um par com o mesmo começo (para testar rejeição por coincidência parcial), uma canção com nota repetida e uma com nota longa.
+- Repertório de **6 canções de *The Legend of Zelda: Ocarina of Time***: Title Theme, Saria's Song, Zelda's Lullaby, Epona's Song, Song of Time e Song of Storms. Cada canção é guardada completa, mas reconhecida pelas primeiras notas (6 nas canções curtas e 8 no Title Theme). Zelda's Lullaby e Epona's Song usam as mesmas notas em ordem diferente, o que testa a falsa aceitação.
 - Modos Aprender e Tocar livre, interface 2D simples.
 - Validação quantitativa e artigo técnico.
 
@@ -109,7 +109,7 @@ Cada canção é uma lista de notas MIDI com durações relativas em batidas, se
 
 ### Regras de decisão (proposta)
 
-- Uma canção só é reconhecida se **todas** as notas estiverem certas, na ordem, com ritmo proporcional dentro da tolerância.
+- Uma canção é reconhecida quando as notas do começo (as primeiras `reconhecer_primeiras` do arquivo da canção) estão **todas** certas, na ordem, com ritmo proporcional dentro da tolerância. A melodia completa serve ao modo Aprender.
 - Se uma canção é o começo de outra, espera-se uma pausa curta antes de decidir.
 - Depois de um erro no modo Aprender, recomeça-se do início da canção.
 - Uma nota sustentada só conta como duas se houver nova articulação (queda de energia ou novo ataque).
