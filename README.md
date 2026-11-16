@@ -14,7 +14,6 @@ Tema: **Proposta 3 – Sistema de resposta a melodias**.
 6. [Validação](#6-validação)
 7. [Plano de trabalho](#7-plano-de-trabalho)
 8. [Estrutura do repositório](#8-estrutura-do-repositório)
-9. [Convenções](#9-convenções)
 
 ## 1. Proposta
 
