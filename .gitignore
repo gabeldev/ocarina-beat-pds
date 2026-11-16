@@ -1,0 +1,32 @@
+# Material da disciplina (enunciado, ficha e slides do professor): manter local
+material/
+
+# Documentação de planejamento: só fica no Git o enunciado (projeto.pdf) e a ficha (proposta.pdf)
+docs/*
+!docs/projeto.pdf
+!docs/proposta.pdf
+
+# Gravações brutas: grandes e com dados de pessoas. Publicar só o que for autorizado,
+# de preferência via Git LFS ou link externo.
+dados/brutos/
+*.wav
+*.flac
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Godot (se for usado)
+.godot/
+
+# Sistema e editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
