@@ -43,7 +43,7 @@ Descrição curta:
 
 - Entrada por **ocarina física** via microfone.
 - Uma nota por vez, sem acordes.
-- Repertório de **3 a 4 canções originais** de 5 a 8 notas, incluindo um par com o mesmo começo (para testar rejeição por coincidência parcial), uma com nota repetida e uma com nota longa.
+- Repertório de **3 a 4 canções de *The Legend of Zelda: Ocarina of Time***, curtas (5 a 8 notas). Se o repertório permitir, incluir um par com o mesmo começo (para testar rejeição por coincidência parcial), uma canção com nota repetida e uma com nota longa.
 - Modos Aprender e Tocar livre, interface 2D simples.
 - Validação quantitativa e artigo técnico.
 
@@ -93,8 +93,8 @@ Cada canção é uma lista de notas MIDI com durações relativas em batidas, se
 ```json
 {
   "schema_version": 1,
-  "id": "cancao_autoral_01",
-  "name": "Canção da Lanterna",
+  "id": "cancao_01",
+  "name": "Canção de exemplo",
   "reference_a4_hz": 440.0,
   "notes": [
     {"midi": 72, "beats": 1},
@@ -102,7 +102,7 @@ Cada canção é uma lista de notas MIDI com durações relativas em batidas, se
     {"midi": 79, "beats": 2},
     {"midi": 76, "beats": 1}
   ],
-  "reaction": "lanterna_acende"
+  "reaction": "reacao_01"
 }
 ```
 

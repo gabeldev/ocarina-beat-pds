@@ -6,6 +6,9 @@ docs/*
 !docs/projeto.pdf
 !docs/proposta.pdf
 
+# Repertório (melodias de Zelda): fica só local, não é distribuído
+repertorio/
+
 # Gravações brutas: grandes e com dados de pessoas. Publicar só o que for autorizado,
 # de preferência via Git LFS ou link externo.
 dados/brutos/
