@@ -203,7 +203,7 @@ Máquina de estados: silêncio, ataque, nota ativa, liberação. A nota é confi
 
 ### Entregáveis
 
-- [ ] Ficha de cadastro preenchida e aprovada (rascunho em `docs/proposta.pdf`, em branco).
+- [ ] Ficha de cadastro aprovada pelo professor (preenchida em `docs/proposta.pdf`, faltam os RAs).
 - [ ] Protótipo funcional ou demonstrador executável.
 - [ ] Código-fonte organizado e comentado.
 - [ ] Dados de teste ou exemplos para reproduzir a demonstração.
