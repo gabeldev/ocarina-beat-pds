@@ -10,19 +10,15 @@ Eventos saem como texto; com --json, uma linha JSON por evento (o que a interfac
 
 import argparse
 import sys
-import time
 from pathlib import Path
 
-import numpy as np
-
-from . import audio
+from . import audio, fontes
 from .instrumento import INSTRUMENTOS, PADRAO
 from .jogo import Jogo
 from .motor import Processador
 from .reconhecedor import carregar_repertorio
 
 REPERTORIO = Path(__file__).resolve().parents[2] / "repertorio"
-BLOCO = 512
 
 
 def _linha(ev, json_):
@@ -40,34 +36,6 @@ def _linha(ev, json_):
     if ev.tipo == "completa":
         return f"{ev.t:7.2f}s  *** {d['nome']} completa! ***"
     return f"{ev.t:7.2f}s  {ev.tipo} {d}"
-
-
-def _blocos_arquivo(caminho):
-    from scipy.io import wavfile
-
-    fs, x = wavfile.read(caminho)
-    x = x.astype(float)
-    if x.dtype.kind == "i" or np.abs(x).max() > 1.5:
-        x /= np.iinfo(np.int16).max
-    if x.ndim > 1:
-        x = x[:, 0]
-    return fs, x
-
-
-def _blocos_microfone(args):
-    from .captura import abrir_entrada
-
-    stream, info = abrir_entrada(args.dispositivo, 48000, canais=1, bloco=BLOCO)
-    print(f"[entrada] {info.nome} @ {info.fs_efetiva:.0f} Hz, latência {info.latencia_s * 1000:.0f} ms", file=sys.stderr)
-
-    def gerar():
-        with stream:
-            fim = time.time() + args.segundos
-            while time.time() < fim:
-                bloco, _ = stream.read(BLOCO)
-                yield bloco[:, 0]
-
-    return info.fs_efetiva, gerar()
 
 
 def _som_do_evento(ev, rep, fs):
@@ -112,18 +80,15 @@ def main(argv=None):
 
     # entrada de áudio
     if args.simular:
-        x = audio.cancao(por_id[args.simular], args.bpm)
-        x = np.concatenate([np.zeros(audio.FS // 2), x, np.zeros(audio.FS * 2)])
-        x = x + args.ruido * np.random.default_rng(0).standard_normal(len(x))
-        fs, blocos = audio.FS, (x[i : i + BLOCO] for i in range(0, len(x), BLOCO))
+        fs, blocos = fontes.simulada(por_id[args.simular], args.bpm, args.ruido)
     elif args.arquivo:
-        fs, x = _blocos_arquivo(args.arquivo)
-        blocos = (x[i : i + BLOCO] for i in range(0, len(x), BLOCO))
+        fs, blocos = fontes.arquivo(args.arquivo)
     else:
         if args.comando == "aprender" and not args.mudo:
             print("Referência:", file=sys.stderr)
             audio.tocar(audio.cancao(por_id[args.alvo], args.bpm))
-        fs, blocos = _blocos_microfone(args)
+        fs, blocos, info = fontes.microfone(args.dispositivo, args.segundos)
+        print(f"[entrada] {info.nome} @ {info.fs_efetiva:.0f} Hz, latência {info.latencia_s * 1000:.0f} ms", file=sys.stderr)
 
     proc = Processador(fs, args.instrumento)
     jogo = Jogo(rep, args.comando, args.alvo)
