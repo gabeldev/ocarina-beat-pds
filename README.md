@@ -263,7 +263,7 @@ Nenhum teste foi executado ainda; as metas abaixo são pontos de partida a negoc
 
 | # | Tarefa | Responsável | Depende da flauta |
 | --- | --- | --- | --- |
-| 1 | Instalar ferramentas (Godot, Blender, Krita) e conferir o ambiente Python (`pytest`, `--simular`) | Gabriel e Elder | Não |
+| 1 | Gabriel: instalar Godot, Blender e Krita. Elder: preparar o ambiente Python e conferir (`pytest`, `--simular`) | Gabriel e Elder | Não |
 | 2 | Gravador de sessões com rótulos (WAV + metadados: canção, executante, condição) | Elder | Não |
 | 3 | Serviço UDP que publica os eventos do jogo em JSON e recebe comandos | Gabriel | Não |
 | 4 | Projeto Godot lendo os eventos, com cena mínima mostrando as notas | Gabriel | Não |
