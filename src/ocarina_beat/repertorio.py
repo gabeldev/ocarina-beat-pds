@@ -12,7 +12,8 @@ from dataclasses import dataclass
 
 import mido
 
-FA_MIN, FA_MAX = 69, 89  # A4..F6: faixa nominal de uma ocarina Alto C de 12 furos
+from .instrumento import INSTRUMENTOS, PADRAO
+
 GRADE = 12  # subdivisões de batida
 DURACAO_MINIMA = 0.05  # batidas; descarta notas espúrias de poucos ticks
 
@@ -40,20 +41,21 @@ def ler_notas(caminho, trilha, canal):
     return sorted(notas, key=lambda n: n.inicio)
 
 
-def oitavas_para_caber(notas):
-    """Menor número de oitavas a somar para a melodia caber em A4..F6."""
+def oitavas_para_caber(notas, instrumento=PADRAO):
+    """Menor número de oitavas (em módulo) a somar para a melodia caber na extensão do instrumento."""
+    ins = INSTRUMENTOS[instrumento]
     menor, maior = min(n.midi for n in notas), max(n.midi for n in notas)
-    for oit in range(-2, 4):
-        if menor + 12 * oit >= FA_MIN and maior + 12 * oit <= FA_MAX:
+    for oit in (0, 1, -1, 2, -2, 3, -3):
+        if menor + 12 * oit >= ins.midi_min and maior + 12 * oit <= ins.midi_max:
             return oit
-    raise ValueError(f"melodia ({menor}..{maior}) não cabe na faixa da ocarina")
+    raise ValueError(f"melodia ({menor}..{maior}) não cabe na faixa de {ins.nome}")
 
 
-def para_cancao(notas, id_, nome, fonte, transpor_oitavas=None, reconhecer_primeiras=None):
+def para_cancao(notas, id_, nome, fonte, transpor_oitavas=None, reconhecer_primeiras=None, instrumento=PADRAO):
     """`reconhecer_primeiras`: quantas notas do início bastam para reconhecer a canção
     (None = a canção inteira). A melodia completa continua em `notes`."""
     if transpor_oitavas is None:
-        transpor_oitavas = oitavas_para_caber(notas)
+        transpor_oitavas = oitavas_para_caber(notas, instrumento)
     saida = []
     for i, n in enumerate(notas):
         dur = notas[i + 1].inicio - n.inicio if i + 1 < len(notas) else n.duracao
@@ -65,6 +67,7 @@ def para_cancao(notas, id_, nome, fonte, transpor_oitavas=None, reconhecer_prime
         "nome": nome,
         "fonte": fonte,
         "transposicao_oitavas": transpor_oitavas,
+        "instrumento": instrumento,
         "reference_a4_hz": 440.0,
         "reconhecer_primeiras": reconhecer_primeiras or len(saida),
         "notes": saida,

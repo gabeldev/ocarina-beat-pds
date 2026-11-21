@@ -13,7 +13,7 @@ Tema: **Proposta 3 – Sistema de resposta a melodias**.
 5. [Atendimento aos requisitos do projeto](#5-atendimento-aos-requisitos-do-projeto)
 6. [Validação](#6-validação)
 7. [Plano de trabalho](#7-plano-de-trabalho)
-8. [Estrutura do repositório](#8-estrutura-do-repositório)
+8. [Distribuição de tarefas](#8-distribuição-de-tarefas)
 
 ## 1. Proposta
 
@@ -258,3 +258,25 @@ Nenhum teste foi executado ainda; as metas abaixo são pontos de partida a negoc
 | 5 | Extensões opcionais: assobio, desafio rítmico. | Só com o núcleo pronto. |
 
 **Riscos principais:** crescimento de escopo (o MVP é o filtro); resolução insuficiente da FFT nas notas graves (testar interpolação, janela maior, autocorrelação); falsa aceitação entre canções parecidas (par de mesmo começo no repertório); microfone diferente na demonstração (testar no equipamento real); melodias fora da extensão da ocarina (definir repertório após caracterizá-la).
+
+## 8. Distribuição de tarefas
+
+| # | Tarefa | Responsável | Depende da flauta |
+| --- | --- | --- | --- |
+| 1 | Instalar ferramentas (Godot, Blender, Krita) e conferir o ambiente Python (`pytest`, `--simular`) | Gabriel e Elder | Não |
+| 2 | Gravador de sessões com rótulos (WAV + metadados: canção, executante, condição) | Elder | Não |
+| 3 | Serviço UDP que publica os eventos do jogo em JSON e recebe comandos | Gabriel | Não |
+| 4 | Projeto Godot lendo os eventos, com cena mínima mostrando as notas | Gabriel | Não |
+| 5 | Assets CC0, ajuste no Blender e no Krita, conferência de licenças | Gabriel | Não |
+| 6 | Filtro passa-faixa FIR/IIR e medição do efeito na estimativa de f0 | Elder | Não |
+| 7 | Perfil de parâmetros por instrumento (limiares e tolerâncias num só lugar) | Elder | Não |
+| 8 | Limiar de silêncio automático e aviso de ganho baixo ou saturado | Elder | Não |
+| 9 | Ferramentas de avaliação (reconhecimento, falsa aceitação, F1, matriz de confusão, latência P95) | Elder | Não |
+| 10 | Gravar as sessões com a flauta (notas sustentadas, 6 canções, erros, silêncio, fala, ruído) | Gabriel e Elder | Sim |
+| 11 | Calibrar afinação e limiares; conferir erro de oitava e notas rápidas | Elder | Sim |
+| 12 | Cena 3D completa, reações das 6 canções e telas de feedback | Gabriel | Não |
+| 13 | Áudio de referência do modo Aprender e pausa da captura durante a reação (eco) | Gabriel | Não |
+| 14 | Experimentos E02–E09 e métricas finais, em sessões separadas da calibração | Elder | Sim |
+| 15 | Integração da flauta com o jogo e ensaio com o microfone da apresentação | Gabriel e Elder | Sim |
+| 16 | Artigo: jogo, interface e arquitetura (Gabriel); fundamentação do PDS, métodos, experimentos, resultados e limitações (Elder); introdução e conclusões (juntos) | Gabriel e Elder | Parcial |
+| 17 | README e ficha finais (flauta, Godot, RAs, créditos dos assets) | Gabriel e Elder | Não |

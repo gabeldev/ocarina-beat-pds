@@ -2,7 +2,7 @@
 
 Uso:
     python -m ocarina_beat.diagnostico --listar
-    python -m ocarina_beat.diagnostico --segundos 10 [--dispositivo N] [--metodo yin]
+    python -m ocarina_beat.diagnostico --segundos 10 [--dispositivo N] [--metodo yin] [--instrumento flauta|ocarina]
 """
 
 import argparse
@@ -12,9 +12,9 @@ import numpy as np
 
 from .captura import abrir_entrada, listar_entradas
 from .estimador import METODOS, rms
+from .instrumento import INSTRUMENTOS, PADRAO
 from .notas import nome_nota, nota_mais_proxima
 
-FMIN, FMAX = 400.0, 1500.0  # faixa nominal de uma ocarina Alto C; ajustar após medir
 JANELA = 2048
 
 
@@ -29,6 +29,7 @@ def main():
     ap.add_argument("--fs", type=int, default=48000, help="taxa pedida (Hz)")
     ap.add_argument("--segundos", type=float, default=10.0)
     ap.add_argument("--metodo", choices=sorted(METODOS), default="yin")
+    ap.add_argument("--instrumento", choices=sorted(INSTRUMENTOS), default=PADRAO)
     args = ap.parse_args()
 
     if args.listar:
@@ -36,6 +37,8 @@ def main():
             print(f"{i:3d}  {nome}  [{api}]  {canais} canais  padrão {fs:.0f} Hz")
         return
 
+    ins = INSTRUMENTOS[args.instrumento]
+    FMIN, FMAX = ins.fmin, ins.fmax
     stream, info = abrir_entrada(args.dispositivo, args.fs, canais=1, bloco=1024)
     print(f"Dispositivo: {info.dispositivo} - {info.nome} [{info.api}]")
     print(f"Taxa pedida: {info.fs_pedida} Hz | efetiva: {info.fs_efetiva:.0f} Hz | latência: {info.latencia_s * 1000:.1f} ms")
