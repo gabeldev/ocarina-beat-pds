@@ -28,10 +28,13 @@ var _tx := PacketPeerUDP.new()
 
 
 func _init() -> void:
-	_tx.set_dest_address(HOST, PORTA_COMANDOS)
-	var e := _rx.bind(PORTA_EVENTOS, HOST)
+	# portas podem ser trocadas por ambiente (útil para rodar duas instâncias)
+	var p_ev := int(OS.get_environment("OCARINA_PORTA_EVENTOS")) if OS.has_environment("OCARINA_PORTA_EVENTOS") else PORTA_EVENTOS
+	var p_cmd := int(OS.get_environment("OCARINA_PORTA_COMANDOS")) if OS.has_environment("OCARINA_PORTA_COMANDOS") else PORTA_COMANDOS
+	_tx.set_dest_address(HOST, p_cmd)
+	var e := _rx.bind(p_ev, HOST)
 	if e != OK:
-		push_error("Ponte: não consegui abrir a porta %d (já em uso?)" % PORTA_EVENTOS)
+		push_error("Ponte: não consegui abrir a porta %d (já em uso?)" % p_ev)
 
 
 func _process(_delta: float) -> void:

@@ -2,7 +2,7 @@
 
     python -m ocarina_beat.servidor [--eventos 9000] [--comandos 9001]
 
-Protocolo em interface/PROTOCOLO.md. Eventos saem para 127.0.0.1:<eventos>;
+Protocolo em jogo/PROTOCOLO.md. Eventos saem para 127.0.0.1:<eventos>;
 comandos chegam em 127.0.0.1:<comandos>.
 """
 

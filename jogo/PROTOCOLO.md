@@ -9,7 +9,7 @@ JSON por UDP local, uma mensagem por datagrama, UTF-8.
 | Godot → Python (comandos) | `127.0.0.1:9001` |
 
 Rodando o serviço: `PYTHONPATH=src .venv/bin/python -m ocarina_beat.servidor` (portas mudam com `--eventos` e `--comandos`).
-No Godot, adicione `interface/ponte.gd` como Autoload chamado `Ponte`; ele já converte cada evento num sinal.
+No Godot, adicione `jogo/ponte.gd` como Autoload chamado `Ponte`; ele já converte cada evento num sinal.
 
 ## Comandos (Godot → Python)
 

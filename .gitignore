@@ -1,5 +1,6 @@
 # Material da disciplina (enunciado, ficha e slides do professor): manter local
 material/
+arte-modelagem/
 
 # Documentação de planejamento: só fica no Git o enunciado (projeto.pdf) e a ficha (proposta.pdf)
 docs/*
