@@ -34,7 +34,7 @@ func _ready() -> void:
 	Ponte.progresso.connect(func(d): hud.progresso(int(d.tocadas)))
 	Ponte.divergencia.connect(_ao_divergencia)
 	Ponte.completa.connect(func(d): _celebrar(d.id, "%s completa!" % d.nome); hud.progresso(999))
-	Ponte.reconhecida.connect(func(d): _celebrar(d.id, "%s!" % d.nome))
+	Ponte.reconhecida.connect(_ao_reconhecida)
 	Ponte.incompleta.connect(func(d): hud.mensagem("Incompleta: %d de %d notas" % [d.tocadas, d.total], "erro"); hud.progresso(0))
 	Ponte.erro.connect(func(d): hud.mensagem(d.mensagem, "erro"))
 	Ponte.referencia.connect(_ao_referencia)
@@ -125,7 +125,20 @@ func _ao_referencia(d: Dictionary) -> void:
 	hud.nota(d.nome)
 
 
+func _ao_reconhecida(d: Dictionary) -> void:
+	_celebrar(d.id, "%s!" % d.nome)
+	# a canção reconhecida vai tocar inteira: mostra as notas dela acendendo
+	var c := _cancao(d.id)
+	if not c.is_empty():
+		hud.sequencia(c.notas)
+
+
 func _ao_audio_fim(d: Dictionary) -> void:
+	if d.som == "cancao":
+		hud.destacar_referencia(-1)
+		hud.silencio()
+		_atualizar_modo()  # volta ao histórico do modo livre
+		return
 	if d.som != "referencia":
 		return
 	hud.destacar_referencia(-1)

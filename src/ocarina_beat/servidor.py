@@ -75,12 +75,20 @@ class Servidor:
         self._agenda.append((agora + dur, "audio_fim", {"som": tipo}))
         self._agenda.sort(key=lambda e: e[0])
 
+    def _tocar_cancao(self, c, tipo, bpm=100):
+        """Toca a canção inteira e marca cada nota (evento `referencia`) no tempo certo."""
+        inicio, marcas = 0.0, []
+        for i, n in enumerate(c["notes"]):
+            marcas.append((inicio, {"indice": i, "nome": nome_nota(n["midi"])}))
+            inicio += n["beats"] * 60.0 / bpm
+        self._tocar(audio.cancao(c, bpm), tipo, marcas)
+
     def _som_do_evento(self, ev):
-        if not self.sons:
-            return
         c = self.por_id.get(ev.dados.get("id"))
-        if ev.tipo in ("reconhecida", "completa") and c:
-            self._tocar(audio.reacao(c), "reacao")
+        if ev.tipo == "reconhecida" and c:
+            self._tocar_cancao(c, "cancao")  # modo livre: toca a canção que foi reconhecida
+        elif ev.tipo == "completa":
+            self._tocar(audio.sucesso(), "sucesso")
         elif ev.tipo in ("divergencia", "incompleta"):
             self._tocar(audio.erro(), "erro")
 
@@ -130,12 +138,7 @@ class Servidor:
                 c = self.por_id.get(msg.get("id") or self.alvo)
                 if c is None:
                     return self.enviar("erro", mensagem=f"canção desconhecida: {msg.get('id')!r}")
-                bpm = msg.get("bpm", 100)
-                inicio, marcas = 0.0, []
-                for i, n in enumerate(c["notes"]):
-                    marcas.append((inicio, {"indice": i, "nome": nome_nota(n["midi"])}))
-                    inicio += n["beats"] * 60.0 / bpm
-                self._tocar(audio.cancao(c, bpm), "referencia", marcas)
+                self._tocar_cancao(c, "referencia", msg.get("bpm", 100))
             elif cmd == "sons":
                 self.sons = bool(msg.get("ativo", True))
                 self.estado()

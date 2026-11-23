@@ -107,12 +107,20 @@ def test_ouvir_toca_referencia_e_marca_as_notas(ambiente):
     assert len(s.tocados) == 1
 
 
-def test_reacao_toca_som_ao_reconhecer(ambiente):
+def test_livre_toca_a_cancao_reconhecida(ambiente):
     s, o = ambiente
     comandar(s, cmd="simular", id="teste")
     msgs = coletar(o, lambda m: m["tipo"] == "fim_audio")
     inicios = [m for m in msgs if m["tipo"] == "audio_inicio"]
-    assert inicios and inicios[0]["som"] == "reacao"
+    assert inicios and inicios[0]["som"] == "cancao"  # modo livre toca a canção reconhecida
+
+
+def test_completa_toca_sucesso(ambiente):
+    s, o = ambiente
+    comandar(s, cmd="aprender", id="teste")
+    comandar(s, cmd="simular", id="teste")
+    msgs = coletar(o, lambda m: m["tipo"] == "audio_inicio")
+    assert msgs[-1]["som"] == "sucesso"
 
 
 def test_microfone_fica_mudo_durante_o_som(ambiente):

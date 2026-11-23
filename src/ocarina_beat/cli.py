@@ -40,8 +40,10 @@ def _linha(ev, json_):
 
 def _som_do_evento(ev, rep, fs):
     c = next((c for c in rep if c["id"] == ev.dados.get("id")), None)
-    if ev.tipo in ("reconhecida", "completa") and c:
-        audio.tocar(audio.reacao(c), audio.FS)
+    if ev.tipo == "reconhecida" and c:
+        audio.tocar(audio.cancao(c), audio.FS)
+    elif ev.tipo == "completa":
+        audio.tocar(audio.sucesso(), audio.FS)
     elif ev.tipo == "divergencia":
         audio.tocar(audio.erro(), audio.FS)
 

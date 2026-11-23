@@ -43,13 +43,31 @@ def cancao(c, bpm=100, fs=FS, articulacao=0.06, n_notas=None):
     return np.concatenate(partes)
 
 
-def reacao(c, fs=FS):
-    """Pequeno arpejo ascendente nas notas do começo da canção, com acorde final."""
-    base = [a["midi"] for a in c["notes"][:3]]
-    notas = [nota(m, 0.12, fs, vibrato=False) for m in base]
-    topo = max(base) + 12
-    fim = sum(nota(m, 0.5, fs, amp=0.15, vibrato=False) for m in (topo, topo + 4, topo + 7))
-    return np.concatenate(notas + [fim])
+def sino(midi, dur, fs=FS, amp=0.22):
+    """Nota com timbre de sino/celesta: ataque rápido e decaimento exponencial."""
+    n = int(dur * fs)
+    t = np.arange(n) / fs
+    f = midi_para_freq(midi)
+    env = np.exp(-t * 4.0) * np.minimum(1, t / 0.004)
+    onda = np.sin(2 * np.pi * f * t) + 0.35 * np.sin(2 * np.pi * 2 * f * t) * np.exp(-t * 6) + 0.12 * np.sin(2 * np.pi * 3.01 * f * t) * np.exp(-t * 9)
+    return amp * env * onda
+
+
+def sucesso(fs=FS):
+    """Fanfarra curta de acerto: arpejo de Dó maior subindo e acorde final soando."""
+    passo = 0.085
+    notas = [72, 76, 79, 84]
+    total = int((passo * len(notas) + 1.4) * fs)
+    x = np.zeros(total)
+    for i, m in enumerate(notas):
+        ini = int(i * passo * fs)
+        s = sino(m, 0.6, fs)
+        x[ini : ini + len(s)] += s[: total - ini]
+    ini = int(len(notas) * passo * fs)
+    for m in (84, 88, 91, 96):  # acorde final (Dó maior aberto)
+        s = sino(m, 1.4, fs, amp=0.13)
+        x[ini : ini + len(s)] += s[: total - ini]
+    return x / max(1.0, np.abs(x).max() / 0.6)
 
 
 def erro(fs=FS):

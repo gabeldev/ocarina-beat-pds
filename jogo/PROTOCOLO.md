@@ -21,7 +21,7 @@ No Godot, adicione `jogo/ponte.gd` como Autoload chamado `Ponte`; ele já conver
 | `microfone` | `dispositivo` (opcional) | Passa a ouvir o microfone. |
 | `parar` | | Para de ouvir. |
 | `ouvir` | `id` (opcional: canção atual), `bpm` (100) | Toca a canção de referência pelo alto-falante. O microfone fica mudo enquanto isso. |
-| `sons` | `ativo` (true/false) | Liga ou desliga os sons do jogo (referência, reação, erro). |
+| `sons` | `ativo` (true/false) | Liga ou desliga os sons do jogo (referência, canção reconhecida, sucesso, erro). |
 | `estado` | | Pede o evento `estado`. |
 | `cancoes` | | Pede o evento `cancoes`. |
 | `sair` | | Encerra o serviço. |
@@ -42,9 +42,9 @@ Todos têm `tipo`. Tempos `t` em segundos desde o início da fonte de áudio.
 | `completa` | `t`, `id`, `nome` | Modo aprender: terminou a canção. |
 | `incompleta` | `t`, `tocadas`, `total` | Modo aprender: 6 s sem nova nota. |
 | `fim_audio` | | A fonte simulada ou de arquivo acabou. |
-| `audio_inicio` | `som` (`referencia`, `reacao` ou `erro`), `duracao` | O serviço começou a tocar um som. O microfone é ignorado até o fim dele (mais 0,3 s). |
+| `audio_inicio` | `som` (`referencia`, `cancao`, `sucesso` ou `erro`), `duracao` | O serviço começou a tocar um som. O microfone é ignorado até o fim dele (mais 0,3 s). |
 | `audio_fim` | `som` | O som terminou. |
-| `referencia` | `indice`, `nome` | Durante `ouvir`: a nota `indice` da canção está soando agora (para destacar na tela). |
+| `referencia` | `indice`, `nome` | Durante `ouvir` (som `referencia`) ou depois de uma canção reconhecida no modo livre (som `cancao`): a nota `indice` está soando agora. |
 | `erro` | `mensagem` | Comando inválido (o serviço continua rodando). |
 
 O som do jogo sai do serviço Python, não do Godot: só ele sabe quando silenciar o microfone. `--mudo` desliga os sons.
