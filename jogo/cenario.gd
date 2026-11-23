@@ -29,7 +29,18 @@ func _ready() -> void:
 		_energia_base = 2.5
 
 
+var _reforco := 1.0
+
+
+## Lanterna mais forte por um tempo (reação da Zelda's Lullaby).
+func reforcar_lanterna(fator: float, segundos: float) -> void:
+	var t := create_tween()
+	t.tween_property(self, "_reforco", fator, 0.6)
+	t.tween_interval(segundos)
+	t.tween_property(self, "_reforco", 1.0, 1.5)
+
+
 func _process(_dt: float) -> void:
 	if _luz:
 		var t := Time.get_ticks_msec() / 1000.0
-		_luz.light_energy = _energia_base * (0.9 + 0.06 * sin(t * 9.0) + 0.04 * sin(t * 23.0))
+		_luz.light_energy = _reforco * _energia_base * (0.9 + 0.06 * sin(t * 9.0) + 0.04 * sin(t * 23.0))

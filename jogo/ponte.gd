@@ -18,6 +18,9 @@ signal incompleta(dados: Dictionary)
 signal estado(dados: Dictionary)        ## {modo, alvo, instrumento, ouvindo, aprendidas}
 signal cancoes(dados: Dictionary)       ## {lista: [{id, nome, notas, beats, reconhecer_primeiras}]}
 signal erro(dados: Dictionary)
+signal audio_inicio(dados: Dictionary)  ## {som, duracao}: o serviço começou a tocar
+signal audio_fim(dados: Dictionary)     ## {som}
+signal referencia(dados: Dictionary)    ## {indice, nome}: nota da referência soando agora
 
 const HOST := "127.0.0.1"
 const PORTA_EVENTOS := 9000
@@ -52,7 +55,7 @@ func _despachar(msg: Dictionary) -> void:
 
 
 ## Envia um comando: livre, aprender {id}, simular {id, bpm, ruido}, microfone,
-## parar, estado, cancoes, sair.
+## parar, ouvir {id, bpm}, sons {ativo}, estado, cancoes, sair.
 func enviar(cmd: String, extra: Dictionary = {}) -> void:
 	var m := {"cmd": cmd}
 	m.merge(extra)

@@ -20,7 +20,10 @@ def ambiente(monkeypatch):
     ouvinte = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     ouvinte.bind(("127.0.0.1", 0))
     ouvinte.settimeout(0.2)
-    s = Servidor([CANCAO], porta_eventos=ouvinte.getsockname()[1], porta_comandos=0)
+    tocados = []
+    s = Servidor([CANCAO], porta_eventos=ouvinte.getsockname()[1], porta_comandos=0,
+                 tocador=lambda x, fs: tocados.append(len(x) / fs))
+    s.tocados = tocados
     th = threading.Thread(target=s.executar, kwargs={"max_s": 10}, daemon=True)
     th.start()
     yield s, ouvinte
@@ -91,3 +94,40 @@ def test_comando_invalido_nao_derruba(ambiente):
     assert len(erros) == 2
     comandar(s, cmd="estado")
     assert coletar(o, lambda m: m["tipo"] == "estado")
+
+
+def test_ouvir_toca_referencia_e_marca_as_notas(ambiente):
+    s, o = ambiente
+    comandar(s, cmd="ouvir", id="teste", bpm=240)
+    msgs = coletar(o, lambda m: m["tipo"] == "audio_fim")
+    inicio = [m for m in msgs if m["tipo"] == "audio_inicio"]
+    assert inicio and inicio[0]["som"] == "referencia"
+    refs = [m for m in msgs if m["tipo"] == "referencia"]
+    assert [m["indice"] for m in refs] == [0, 1, 2, 3, 4] and refs[0]["nome"] == "D5"
+    assert len(s.tocados) == 1
+
+
+def test_reacao_toca_som_ao_reconhecer(ambiente):
+    s, o = ambiente
+    comandar(s, cmd="simular", id="teste")
+    msgs = coletar(o, lambda m: m["tipo"] == "fim_audio")
+    inicios = [m for m in msgs if m["tipo"] == "audio_inicio"]
+    assert inicios and inicios[0]["som"] == "reacao"
+
+
+def test_microfone_fica_mudo_durante_o_som(ambiente):
+    import numpy as np
+
+    from ocarina_beat import audio as au
+
+    s, o = ambiente
+    s.ativo = False  # para o laço; vamos chamar _passo na mão
+    time.sleep(0.05)
+    tom = au.nota(74, 1.0)
+    s._iniciar_fonte(au.FS, iter([tom[i:i + 512] for i in range(0, len(tom), 512)]), ao_vivo=True)
+    s._mudo_ate = time.time() + 60
+    for _ in range(80):
+        s._passo()
+    assert s.proc.notas == []  # nada passou enquanto o jogo tocava
+    assert all(q.midi is None for q in s.proc.quadros)
+    assert np.isfinite(s.proc.tempo)

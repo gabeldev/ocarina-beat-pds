@@ -91,6 +91,15 @@ func sequencia(nomes: Array) -> void:
 	_desenhar_sequencia()
 
 
+## destaca a nota da sequência que está soando na referência (-1 limpa)
+var _referencia := -1
+
+
+func destacar_referencia(indice: int) -> void:
+	_referencia = indice
+	_desenhar_sequencia()
+
+
 func progresso(tocadas: int) -> void:
 	_tocadas = tocadas
 	_desenhar_sequencia()
@@ -245,10 +254,13 @@ func _desenhar_sequencia() -> void:
 		c.queue_free()
 	for i in _seq.size():
 		var feita := _modo_aprender and i < _tocadas
-		var proxima := _modo_aprender and i == _tocadas
+		var proxima := _modo_aprender and i == _tocadas and _referencia < 0
+		var soando := i == _referencia
 		var cor := Color(0.12, 0.17, 0.24, 0.72)
 		if feita:
 			cor = Color(0.25, 0.48, 0.32, 0.9)
+		if soando:
+			cor = Color(AMBAR, 0.95)
 		var chip := PanelContainer.new()
 		var st := _caixa(cor, 12)
 		st.content_margin_left = 12
@@ -260,6 +272,8 @@ func _desenhar_sequencia() -> void:
 			st.set_border_width_all(2)
 		chip.add_theme_stylebox_override("panel", st)
 		var txt_cor := CREME if (feita or proxima or not _modo_aprender) else Color(CREME, 0.55)
+		if soando:
+			txt_cor = Color("1B2433")
 		chip.add_child(_rotulo(_seq[i], 18, txt_cor))
 		_linha_seq.add_child(chip)
 

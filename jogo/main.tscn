@@ -6,6 +6,8 @@
 [ext_resource type="PackedScene" path="res://modelos/cenario.glb" id="4"]
 [ext_resource type="Script" path="res://cenario.gd" id="5"]
 [ext_resource type="Script" path="res://hud.gd" id="6"]
+[ext_resource type="Script" path="res://reacoes.gd" id="7"]
+[ext_resource type="Script" path="res://menu.gd" id="8"]
 
 [sub_resource type="ProceduralSkyMaterial" id="CeuMat"]
 sky_top_color = Color(0.32, 0.30, 0.48, 1)
@@ -67,3 +69,12 @@ script = ExtResource("3")
 
 [node name="HUD" type="CanvasLayer" parent="."]
 script = ExtResource("6")
+
+[node name="Reacoes" type="Node3D" parent="." node_paths=PackedStringArray("ambiente", "sol", "cenario")]
+script = ExtResource("7")
+ambiente = NodePath("../Ambiente")
+sol = NodePath("../Sol")
+cenario = NodePath("../Cenario")
+
+[node name="Menu" type="CanvasLayer" parent="."]
+script = ExtResource("8")
