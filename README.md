@@ -1,6 +1,6 @@
 # Ocarina Beat — MVP de PDS
 
-Jogo musical em que o jogador toca canções curtas numa **ocarina real**. O microfone capta o áudio, o processamento digital de sinais (PDS) reconhece as notas e o ritmo e, quando a canção está certa, o jogo reage.
+Jogo musical com tema de ocarina em que o jogador toca canções curtas numa **flauta doce real**. O microfone capta o áudio, o processamento digital de sinais (PDS) reconhece as notas e o ritmo e, quando a canção está certa, o jogo reage.
 
 Tema: **Proposta 3 – Sistema de resposta a melodias**.
 
@@ -14,12 +14,13 @@ Tema: **Proposta 3 – Sistema de resposta a melodias**.
 6. [Validação](#6-validação)
 7. [Plano de trabalho](#7-plano-de-trabalho)
 8. [Distribuição de tarefas](#8-distribuição-de-tarefas)
+9. [Como rodar](#9-como-rodar)
 
 ## 1. Proposta
 
 O enunciado pede um sistema que reconheça uma sequência musical previamente definida e produza uma **reação inequívoca** quando a sequência correta for executada, envolvendo **ordem, intervalos e duração/ritmo conhecidos**.
 
-Nossa variação: o jogador toca uma canção numa **ocarina física**. O sistema:
+Nossa variação: o jogador toca uma canção numa **flauta doce soprano** (instrumento físico). O personagem e o tema do jogo continuam sendo de ocarina; a flauta substitui a ocarina por custo e simplicidade, com aprovação do professor. O sistema:
 
 1. captura o som pelo microfone;
 2. estima a frequência fundamental e segmenta as notas (início, fim e duração);
@@ -28,22 +29,22 @@ Nossa variação: o jogador toca uma canção numa **ocarina física**. O sistem
 
 Descrição curta:
 
-> Toque uma canção na sua ocarina e veja o jogo responder. O Ocarina Beat usa processamento digital de sinais para reconhecer as notas e o ritmo que você toca.
+> Toque uma canção na sua flauta e veja o jogo responder. O Ocarina Beat usa processamento digital de sinais para reconhecer as notas e o ritmo que você toca.
 
 ### Modos de jogo
 
 | Modo | Função | Prioridade |
 | --- | --- | --- |
-| **Aprender** | Mostra a canção, toca uma referência sonora (em fones) e pede para o jogador repetir. Indica qual nota ou ritmo divergiu. | Núcleo |
+| **Aprender** | Mostra a canção, toca a referência sonora (com o microfone mudo enquanto o jogo toca) e pede para o jogador repetir. Indica qual nota ou ritmo divergiu. | Núcleo |
 | **Tocar livre** | Escuta continuamente, mostra as notas reconhecidas e dispara a reação quando as últimas notas formam uma canção do repertório. Melodia desconhecida não dispara nada. | Núcleo |
 | **Desafio rítmico** | Pista de notas no estilo jogos de ritmo, com tempo. | Opcional |
 
 ## 2. Escopo
 
-- Entrada por **ocarina física** via microfone.
+- Entrada por **flauta doce soprano germânica em Dó** via microfone. Extensão nominal Dó5–Ré7 (523–2.349 Hz); o repertório fica em Dó5–Lá6.
 - Uma nota por vez, sem acordes.
-- Repertório de **6 canções de *The Legend of Zelda: Ocarina of Time***: Title Theme, Saria's Song, Zelda's Lullaby, Epona's Song, Song of Time e Song of Storms. Cada canção é guardada completa, mas reconhecida pelas primeiras notas (6 nas canções curtas e 8 no Title Theme). Zelda's Lullaby e Epona's Song usam as mesmas notas em ordem diferente, o que testa a falsa aceitação.
-- Modos Aprender e Tocar livre, interface 2D simples.
+- Repertório de **6 canções de *The Legend of Zelda: Ocarina of Time***: Title Theme, Saria's Song, Zelda's Lullaby, Epona's Song, Song of Time e Song of Storms. Cada canção é guardada completa (11 a 17 notas), mas reconhecida pelas 6 primeiras. Zelda's Lullaby e Epona's Song usam as mesmas notas em ordem diferente, o que testa a falsa aceitação.
+- Modos Aprender e Tocar livre, interface 3D em Godot.
 - Validação quantitativa e artigo técnico.
 
 **Extensões opcionais (só com o núcleo validado):** assobio (comparação por intervalos relativos), desafio rítmico, controle de velocidade no modo Aprender, mais canções.
@@ -54,7 +55,7 @@ Descrição curta:
 
 ```mermaid
 flowchart LR
-    A[Ocarina física] --> B[Microfone e captura PCM]
+    A[Flauta doce] --> B[Microfone e captura PCM]
     B --> C[Buffer, RMS e pré-processamento]
     C --> D[Estimação de frequência e confiança]
     C --> E[Detecção de início e fim]
@@ -62,7 +63,7 @@ flowchart LR
     E --> F
     F --> G[Reconhecimento de canção]
     H[Repertório JSON] --> G
-    G --> J[Interface: notas tocadas e reação]
+    G --> J[Jogo em Godot: notas, reação e sons]
     F --> J
     C --> K[Registros experimentais]
     G --> K
@@ -78,39 +79,49 @@ flowchart LR
 | Segmentador | Estados silêncio → ataque → nota ativa → liberação; separa nota sustentada de notas repetidas. |
 | Reconhecedor | Compara as últimas notas com cada canção (notas + razões de duração); decide: reconhecida, nenhuma, ou onde divergiu. |
 | Sessão e jogo | Modos Aprender e Tocar livre, histórico de notas, reinício após erro, reação. |
-| Interface | Símbolos das notas, feedback de divergência, tela de diagnóstico (nível, frequência, nota). |
+| Interface | Jogo 3D em Godot (personagem, cenário, reações), HUD com as notas e a divergência, menu; tela de diagnóstico no terminal (nível, frequência, nota). |
 | Registro | Configuração, eventos e métricas por sessão, para validação. |
 
-### Possível Stack
+### Stack
 
-Desenvolvimento em **Linux**, aplicação desktop, processamento local. Proposta mais simples: **Python** (NumPy/SciPy para o PDS, `sounddevice` para captura via PortAudio, `pygame` para a interface 2D). Alternativa: Godot para a interface e Python para a bancada experimental.
+Desenvolvimento em **Linux**, aplicação desktop, processamento local.
+
+- **Python** (NumPy/SciPy, `sounddevice` via PortAudio): captura, PDS, segmentação, reconhecimento, lógica dos modos e sons do jogo. Tudo testado com `pytest`.
+- **Godot 4** (Forward+): cena 3D, personagem animado, reações e interface.
+- **Ponte UDP local em JSON** entre os dois: o serviço Python publica eventos (nota, nível, canção reconhecida, divergência...) e recebe comandos. Protocolo em [`jogo/PROTOCOLO.md`](jogo/PROTOCOLO.md).
+- **Blender**: personagem e cenário próprios, modelados por script e exportados em glTF (os arquivos-fonte de arte ficam fora do repositório).
+
+O som do jogo sai do serviço Python, que silencia o microfone enquanto toca (mais 0,3 s de margem), para o próprio som do jogo não virar nota.
 
 ### Formato do repertório
 
-Cada canção é uma lista de notas MIDI com durações relativas em batidas, sem instantes absolutos (a canção pode começar em qualquer momento e em andamento razoável). Os intervalos são derivados das notas, então o mesmo arquivo serve ao modo absoluto (ocarina) e ao relativo (assobio, no futuro).
+Cada canção é uma lista de notas MIDI com durações relativas em batidas, sem instantes absolutos (a canção pode começar em qualquer momento e em andamento razoável). Os intervalos são derivados das notas, então o mesmo arquivo serve ao modo absoluto (flauta) e ao relativo (assobio, no futuro).
 
 ```json
 {
   "schema_version": 1,
   "id": "cancao_01",
-  "name": "Canção de exemplo",
+  "nome": "Canção de exemplo",
+  "fonte": "arquivo MIDI de origem",
+  "transposicao_oitavas": 1,
+  "instrumento": "flauta",
   "reference_a4_hz": 440.0,
+  "reconhecer_primeiras": 6,
   "notes": [
     {"midi": 72, "beats": 1},
     {"midi": 76, "beats": 1},
     {"midi": 79, "beats": 2},
     {"midi": 76, "beats": 1}
-  ],
-  "reaction": "reacao_01"
+  ]
 }
 ```
 
-(Valores ilustrativos; o repertório real depende da extensão da ocarina.)
+(Valores ilustrativos.) Os arquivos são gerados por `experimentos/gerar_repertorio.py` a partir de MIDIs, só com a linha melódica, transpostos por oitavas inteiras para caber na extensão da flauta. Por direitos autorais, as melodias e os MIDIs ficam fora do repositório (`repertorio/` é local).
 
 ### Regras de decisão (proposta)
 
 - Uma canção é reconhecida quando as notas do começo (as primeiras `reconhecer_primeiras` do arquivo da canção) estão **todas** certas, na ordem, com ritmo proporcional dentro da tolerância. A melodia completa serve ao modo Aprender.
-- Se uma canção é o começo de outra, espera-se uma pausa curta antes de decidir.
+- Nenhuma canção pode começar igual a outra: o gerador do repertório confere isso e aborta se dois começos coincidirem.
 - Depois de um erro no modo Aprender, recomeça-se do início da canção.
 - Uma nota sustentada só conta como duas se houver nova articulação (queda de energia ou novo ataque).
 - Não informar nota quando o estimador não tem evidência suficiente; falha de captura não é erro musical.
@@ -123,7 +134,7 @@ Para cada tópico, onde ele entra no projeto.
 
 O áudio é uma sequência `x[n] = x(nT)`, com `T = 1/fs`, e o tempo de cada amostra é `n/fs`. Pelo critério de Nyquist, `fs ≥ 2·fmax`; abaixo disso há aliasing, que não dá para desfazer depois.
 
-**Onde entra:** justificar a taxa de captura (requisito 2 do enunciado). As fundamentais da ocarina ficam abaixo de alguns kHz (uma alto em Dó de 12 furos vai de ~440 Hz a ~1.400 Hz), então 44,1 ou 48 kHz sobram. Se decidirmos decimar para 16 kHz para reduzir custo, será preciso um filtro anti-aliasing antes. Também serve para gerar os sinais sintéticos de teste (senoides com `ω0 = 2πf/fs`).
+**Onde entra:** justificar a taxa de captura (requisito 2 do enunciado). As fundamentais da flauta doce soprano ficam abaixo de 2,4 kHz (Dó5 a Ré7, 523 a 2.349 Hz; o repertório vai até Lá6, 1.760 Hz), então 44,1 ou 48 kHz sobram. Se decidirmos decimar para 16 kHz para reduzir custo, será preciso um filtro anti-aliasing antes. Também serve para gerar os sinais sintéticos de teste (senoides com `ω0 = 2πf/fs`).
 
 ### 4.2 Energia e filtros
 
@@ -132,15 +143,15 @@ O áudio é uma sequência `x[n] = x(nT)`, com `T = 1/fs`, e o tempo de cada amo
 
 **Onde entra:**
 - O RMS, com limiar e histerese, decide se há som e marca início e fim de cada nota (silêncio, fala baixa e ruído de fundo não podem virar nota).
-- Um passa-altas ou passa-faixa FIR/IIR remove ruído grave (ventilador, vibração do suporte) antes do estimador. Será preciso conferir que a banda escolhida não corta as notas mais graves da ocarina.
+- Um passa-altas ou passa-faixa FIR/IIR remove ruído grave (ventilador, vibração do suporte) antes do estimador. Será preciso conferir que a banda escolhida não corta as notas mais graves da flauta (Dó5, 523 Hz).
 - Uma média móvel suaviza a curva de frequência entre janelas.
-- Estabilidade: se o jogo tocar a referência por alto-falante, o som volta ao microfone e pode gerar microfonia. Por isso a referência do modo Aprender sai em fones.
+- Estabilidade: se o jogo tocar a referência por alto-falante, o som volta ao microfone e pode gerar microfonia ou notas falsas. Por isso o microfone é ignorado enquanto o jogo toca; com fones o problema some.
 
 ### 4.3 DFT e FFT
 
 A DFT amostra N pontos do espectro: `X[k] = Σ x[n] e^{−j2πkn/N}`, com bins espaçados de `Δf = fs/N`. A FFT calcula isso em O(N log N). A janela de Hann reduz o vazamento espectral ao custo de um lóbulo principal mais largo, e zero-padding não aumenta a resolução física.
 
-**Onde entra:** é o método de referência para estimar a frequência fundamental. Com `fs = 48 kHz` e `N = 2048`, `Δf ≈ 23,4 Hz`, quase um semitom em A4 (~26 Hz), então nas notas graves a resolução é o ponto crítico. Vamos testar interpolação parabólica do pico, janelas maiores (com mais atraso) e o método temporal da seção 4.5. Como a ocarina soa quase como uma senoide, o pico da FFT tende a ser a fundamental, mas erros de oitava ainda podem acontecer e serão medidos.
+**Onde entra:** é o método de referência para estimar a frequência fundamental. Com `fs = 48 kHz` e `N = 2048`, `Δf ≈ 23,4 Hz`, pouco menos de um semitom em Dó5 (~31 Hz), então nas notas graves a resolução é o ponto crítico. Vamos testar interpolação parabólica do pico, janelas maiores (com mais atraso) e o método temporal da seção 4.5. Como a flauta doce soa quase como uma senoide, o pico da FFT tende a ser a fundamental, mas erros de oitava ainda podem acontecer e serão medidos.
 
 ### 4.4 Transformada Z
 
@@ -168,7 +179,7 @@ Máquina de estados: silêncio, ataque, nota ativa, liberação. A nota é confi
 
 ### 4.8 Comparação com o repertório
 
-- **Absoluta (ocarina):** notas MIDI e razões de duração. Cada duração é dividida pela duração média, tanto na execução quanto na canção, e as razões são comparadas com uma tolerância. Assim o reconhecimento não depende do andamento.
+- **Absoluta (flauta):** notas MIDI e razões de duração. Cada duração é dividida pela duração média, tanto na execução quanto na canção, e as razões são comparadas com uma tolerância. Assim o reconhecimento não depende do andamento.
 - **Relativa (assobio, extensão):** intervalos `12·log2(f[i+1]/f[i])` em semitons, que permitem tocar em outra altura.
 - **Alinhamento:** associação um-para-um e monotônica entre eventos tocados e esperados, para que uma nota extra ou perdida não desloque o resto.
 
@@ -180,7 +191,7 @@ Máquina de estados: silêncio, ataque, nota ativa, liberação. A nota é confi
 
 | # | Exigência | Como será atendida |
 | --- | --- | --- |
-| 1 | Sinal real adquirido pela equipe | Ocarina física gravada nos ensaios e tocada ao vivo na demonstração. |
+| 1 | Sinal real adquirido pela equipe | Flauta doce gravada nos ensaios e tocada ao vivo na demonstração. |
 | 2 | Frequência de amostragem identificada e justificada | Registro da taxa efetiva (44,1/48 kHz) e justificativa por Nyquist (seção 4.1). |
 | 3 | Etapa explícita de PDS | Janelamento, filtragem, FFT/autocorrelação/YIN, segmentação. |
 | 4 | Decisão/estimativa quantitativa | Frequência, nota, cents, durações e comparação com o repertório. |
@@ -193,17 +204,17 @@ Máquina de estados: silêncio, ataque, nota ativa, liberação. A nota é confi
 
 | Pergunta | Resposta proposta |
 | --- | --- |
-| Reconhecimento absoluto ou relativo? | Absoluto (notas + durações proporcionais) para a ocarina; relativo para o assobio, se adicionado. |
+| Reconhecimento absoluto ou relativo? | Absoluto (notas + durações proporcionais) para a flauta; relativo para o assobio, se adicionado. |
 | Qual tolerância de afinação? | Inicial ±50 cents; testar ±25 e ±35. |
 | Ritmo exato ou proporcional? | Proporcional, por razões de duração, com tolerância a medir. |
 | Como voltar ao início após um erro? | Recomeçar do início da canção (modo Aprender). |
 | Como distinguir nota sustentada de nota repetida? | Exigir nova articulação (queda de energia ou novo ataque). |
-| Como evitar aceitação por coincidência parcial? | Exigir todos os eventos, na ordem; esperar pausa quando uma canção é prefixo de outra; medir falsa aceitação. |
+| Como evitar aceitação por coincidência parcial? | Exigir todos os eventos do começo, na ordem, com ritmo proporcional; repertório sem começos iguais; medir falsa aceitação. |
 
 ### Entregáveis
 
 - [ ] Ficha de cadastro aprovada pelo professor (preenchida em `docs/proposta.pdf`, faltam os RAs).
-- [ ] Protótipo funcional ou demonstrador executável.
+- [x] Protótipo funcional ou demonstrador executável (jogo em Godot + serviço Python; ver seção 9).
 - [ ] Código-fonte organizado e comentado.
 - [ ] Dados de teste ou exemplos para reproduzir a demonstração.
 - [ ] Artigo técnico (problema, fundamentação, arquitetura, métodos, experimentos, resultados, limitações, conclusões).
@@ -213,7 +224,7 @@ Máquina de estados: silêncio, ataque, nota ativa, liberação. A nota é confi
 
 | ID | Requisito |
 | --- | --- |
-| RF01 | Capturar a ocarina física pelo microfone. |
+| RF01 | Capturar a flauta doce pelo microfone. |
 | RF02 | Informar dispositivo e frequência de amostragem efetivamente usados. |
 | RF03 | Estimar frequência fundamental e nota. |
 | RF04 | Segmentar eventos musicais com início, fim e duração. |
@@ -226,9 +237,9 @@ Máquina de estados: silêncio, ataque, nota ativa, liberação. A nota é confi
 
 ## 6. Validação
 
-Nenhum teste foi executado ainda; as metas abaixo são pontos de partida a negociar depois da linha de base.
+Até agora há só testes com sinal sintético (experimento E01 e os testes automáticos em `tests/`); os testes com a flauta real começam agora. As metas abaixo são pontos de partida a negociar depois da linha de base.
 
-**Dados:** notas sustentadas da ocarina (5 notas × 5 repetições × 2 executantes), transições, notas repetidas, sequências corretas, erros controlados (nota trocada, ritmo errado, canção pela metade, canção de mesmo começo), silêncio, fala e ruído. Áudios originais preservados; sessões de ajuste separadas das de avaliação final.
+**Dados:** notas sustentadas da flauta (5 notas × 5 repetições × 2 executantes), transições, notas repetidas, sequências corretas, erros controlados (nota trocada, ritmo errado, canção pela metade, canção de mesmo começo), silêncio, fala e ruído. Áudios originais preservados; sessões de ajuste separadas das de avaliação final.
 
 **Métricas**
 
@@ -250,33 +261,73 @@ Nenhum teste foi executado ainda; as metas abaixo são pontos de partida a negoc
 
 | Fase | Conteúdo | Saída |
 | --- | --- | --- |
-| 0 | Caracterizar a ocarina, testar captura no Linux, definir repertório, submeter a ficha. | Ficha aprovada e ambiente funcionando. |
+| 0 | Caracterizar a flauta, testar captura no Linux, definir repertório, submeter a ficha. | Ficha aprovada e ambiente funcionando. |
 | 1 | Captura e frequência: tela de diagnóstico; FFT (Hann, com/sem interpolação) × autocorrelação. | Notas do repertório reconhecidas com confiança. |
 | 2 | Eventos e ritmo: segmentação, nota sustentada × repetida, latência. | Sequência de notas com durações e qualidade medida. |
 | 3 | Reconhecimento de canções e jogo: modos Aprender e Tocar livre, reação. | RF01–RF10 com evidência. |
 | 4 | Validar e entregar: congelar configuração, experimentos, artigo, demonstração. | MVP e material acadêmico entregues. |
 | 5 | Extensões opcionais: assobio, desafio rítmico. | Só com o núcleo pronto. |
 
-**Riscos principais:** crescimento de escopo (o MVP é o filtro); resolução insuficiente da FFT nas notas graves (testar interpolação, janela maior, autocorrelação); falsa aceitação entre canções parecidas (par de mesmo começo no repertório); microfone diferente na demonstração (testar no equipamento real); melodias fora da extensão da ocarina (definir repertório após caracterizá-la).
+**Situação:** as fases 1 a 3 estão implementadas e validadas com sinal sintético; falta repeti-las com a flauta real e fazer a fase 4.
+
+**Riscos principais:** crescimento de escopo (o MVP é o filtro); resolução insuficiente da FFT nas notas graves (testar interpolação, janela maior, autocorrelação); falsa aceitação entre canções parecidas (par de mesmo começo no repertório); microfone diferente na demonstração (testar no equipamento real); melodias fora da extensão da flauta (repertório transposto por oitavas para Dó5–Lá6).
 
 ## 8. Distribuição de tarefas
 
-| # | Tarefa | Responsável | Depende da flauta |
-| --- | --- | --- | --- |
-| 1 | Gabriel: instalar Godot, Blender e Krita. Elder: preparar o ambiente Python e conferir (`pytest`, `--simular`) | Gabriel e Elder | Não |
-| 2 | Gravador de sessões com rótulos (WAV + metadados: canção, executante, condição) | Elder | Não |
-| 3 | Serviço UDP que publica os eventos do jogo em JSON e recebe comandos | Gabriel | Não |
-| 4 | Projeto Godot lendo os eventos, com cena mínima mostrando as notas | Gabriel | Não |
-| 5 | Assets CC0, ajuste no Blender e no Krita, conferência de licenças | Gabriel | Não |
-| 6 | Filtro passa-faixa FIR/IIR e medição do efeito na estimativa de f0 | Elder | Não |
-| 7 | Perfil de parâmetros por instrumento (limiares e tolerâncias num só lugar) | Elder | Não |
-| 8 | Limiar de silêncio automático e aviso de ganho baixo ou saturado | Elder | Não |
-| 9 | Ferramentas de avaliação (reconhecimento, falsa aceitação, F1, matriz de confusão, latência P95) | Elder | Não |
-| 10 | Gravar as sessões com a flauta (notas sustentadas, 6 canções, erros, silêncio, fala, ruído) | Gabriel e Elder | Sim |
-| 11 | Calibrar afinação e limiares; conferir erro de oitava e notas rápidas | Elder | Sim |
-| 12 | Cena 3D completa, reações das 6 canções e telas de feedback | Gabriel | Não |
-| 13 | Áudio de referência do modo Aprender e pausa da captura durante a reação (eco) | Gabriel | Não |
-| 14 | Experimentos E02–E09 e métricas finais, em sessões separadas da calibração | Elder | Sim |
-| 15 | Integração da flauta com o jogo e ensaio com o microfone da apresentação | Gabriel e Elder | Sim |
-| 16 | Artigo: jogo, interface e arquitetura (Gabriel); fundamentação do PDS, métodos, experimentos, resultados e limitações (Elder); introdução e conclusões (juntos) | Gabriel e Elder | Parcial |
-| 17 | README e ficha finais (flauta, Godot, RAs, créditos dos assets) | Gabriel e Elder | Não |
+| # | Tarefa | Responsável | Depende da flauta | Situação |
+| --- | --- | --- | --- | --- |
+| 1 | Ambiente: Godot, Blender e Krita; ambiente Python (`pytest`, `--simular`) | Gabriel e Elder | Não | Gabriel feito |
+| 2 | Gravador de sessões com rótulos (WAV + metadados: canção, executante, condição) | Elder | Não | Pendente |
+| 3 | Serviço UDP que publica os eventos do jogo em JSON e recebe comandos | Gabriel | Não | Feito |
+| 4 | Projeto Godot lendo os eventos | Gabriel | Não | Feito |
+| 5 | Arte 3D própria: personagem e cenário modelados no Blender por script | Gabriel | Não | Feito |
+| 6 | Filtro passa-faixa FIR/IIR e medição do efeito na estimativa de f0 | Elder | Não | Pendente |
+| 7 | Perfil de parâmetros por instrumento (limiares e tolerâncias num só lugar) | Elder | Não | Pendente |
+| 8 | Limiar de silêncio automático e aviso de ganho baixo ou saturado | Elder | Não | Pendente |
+| 9 | Ferramentas de avaliação (reconhecimento, falsa aceitação, F1, matriz de confusão, latência P95) | Elder | Não | Pendente |
+| 10 | Gravar as sessões com a flauta (notas sustentadas, 6 canções, erros, silêncio, fala, ruído) | Gabriel e Elder | Sim | Pendente |
+| 11 | Calibrar afinação e limiares; conferir erro de oitava e notas rápidas | Elder | Sim | Pendente |
+| 12 | Cena 3D completa, reações das 6 canções, HUD e menu | Gabriel | Não | Feito |
+| 13 | Áudio no jogo: referência do modo Aprender, sons de acerto e erro, microfone mudo durante o som | Gabriel | Não | Feito |
+| 14 | Experimentos E02–E09 e métricas finais, em sessões separadas da calibração | Elder | Sim | Pendente |
+| 15 | Integração da flauta com o jogo e ensaio com o microfone da apresentação | Gabriel e Elder | Sim | Pendente |
+| 16 | Artigo: jogo, interface e arquitetura (Gabriel); fundamentação do PDS, métodos, experimentos, resultados e limitações (Elder); introdução e conclusões (juntos) | Gabriel e Elder | Parcial | Pendente |
+| 17 | README e ficha finais (RAs, créditos) | Gabriel e Elder | Não | Em andamento |
+
+## 9. Como rodar
+
+Requisitos: Linux, Python 3.12, PortAudio (`libportaudio2`) e Godot 4.4 ou mais recente.
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python -m pytest                       # testes automáticos
+.venv/bin/python experimentos/gerar_repertorio.py  # gera repertorio/*.json a partir dos MIDIs locais
+```
+
+**Jogo:** em um terminal, suba o serviço; depois abra a pasta `jogo/` no Godot e rode (F5).
+
+```bash
+PYTHONPATH=src .venv/bin/python -m ocarina_beat.servidor   # --mudo para não tocar sons
+```
+
+No menu, "Entrada: Demonstração (sem flauta)" faz o serviço simular a canção, para apresentar sem o instrumento.
+
+**Terminal (sem Godot):**
+
+```bash
+PYTHONPATH=src .venv/bin/python -m ocarina_beat.diagnostico --segundos 15   # nível, frequência e nota em tempo real
+PYTHONPATH=src .venv/bin/python -m ocarina_beat.cli livre                   # tocar livre pelo microfone
+PYTHONPATH=src .venv/bin/python -m ocarina_beat.cli aprender epona_song     # aprender uma canção
+PYTHONPATH=src .venv/bin/python -m ocarina_beat.cli livre --simular epona_song  # sem microfone
+```
+
+**Estrutura**
+
+| Pasta | Conteúdo |
+| --- | --- |
+| `src/ocarina_beat/` | Captura, estimadores de f0, segmentador, reconhecedor, lógica do jogo, sons, serviço UDP e CLI. |
+| `tests/` | Testes automáticos (`pytest`). |
+| `experimentos/` | Experimentos (E01) e gerador do repertório. |
+| `jogo/` | Projeto Godot: cena, personagem, cenário, reações, HUD, menu e a ponte com o Python. |
+| `docs/` | Enunciado e ficha de proposta. |
