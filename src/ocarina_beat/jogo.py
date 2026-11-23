@@ -14,9 +14,9 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from .notas import nome_nota
-from .reconhecedor import reconhecer
+from .reconhecedor import bate, reconhecer, relacao_ok
 
-TOL_RITMO_APRENDER = 0.4  # erro relativo máximo de um intervalo em relação ao esperado
+REPETIR_APOS_S = 8.0  # modo livre: a mesma canção só é reconhecida de novo depois disso
 TIMEOUT_S = 6.0  # sem nova nota por esse tempo, a tentativa é considerada incompleta
 
 
@@ -31,14 +31,14 @@ class Evento:
 
 
 class Jogo:
-    def __init__(self, repertorio, modo="livre", alvo=None, tol_ritmo=TOL_RITMO_APRENDER):
+    def __init__(self, repertorio, modo="livre", alvo=None):
         self.rep = repertorio
         self.modo = modo
-        self.tol = tol_ritmo
         self.alvo = next(c for c in repertorio if c["id"] == alvo) if modo == "aprender" else None
         self.aprendidas = set()
         self._vistas = 0  # quantas notas já geraram evento "nota"
         self._corte = -1.0  # no modo livre, só notas com início depois disso entram no histórico
+        self._ultima = (None, -1e9)  # (id, instante) da última canção reconhecida no modo livre
         self._reiniciar()
 
     def _reiniciar(self):
@@ -49,7 +49,15 @@ class Jogo:
         """`notas`: todas as notas até agora (fechadas + em andamento). Devolve os eventos novos."""
         ev = []
         for n in notas[self._vistas :]:
-            ev.append(Evento("nota", n.inicio, {"midi": n.midi, "nome": nome_nota(n.midi), "cents": round(n.cents_medio, 1)}))
+            midi = n.midi
+            if self.modo == "aprender":
+                # no modo aprender a nota esperada é conhecida: se a tocada estiver dentro da
+                # tolerância, mostra a esperada (um Dó5 alto não aparece como Dó#5 na tela)
+                esperado = self.alvo["notes"][self._idx]["midi"]
+                if bate(n, esperado):
+                    midi = esperado
+            cents = round((n.midi + n.cents_medio / 100.0 - midi) * 100, 1)
+            ev.append(Evento("nota", n.inicio, {"midi": midi, "nome": nome_nota(midi), "cents": cents}))
             if self.modo == "aprender":
                 ev += self._conferir(n)
         self._vistas = len(notas)
@@ -67,6 +75,9 @@ class Jogo:
         if r is None:
             return []
         self._corte = hist[-1].inicio  # consome tudo até aqui, evita disparar duas vezes
+        if r.id == self._ultima[0] and r.inicio - self._ultima[1] < REPETIR_APOS_S:
+            return []  # a canção repetindo o próprio começo (ex.: Title Theme) não conta de novo
+        self._ultima = (r.id, r.fim)
         return [Evento("reconhecida", t, {"id": r.id, "nome": r.nome, "erro_ritmo": round(r.erro_ritmo, 3)})]
 
     # --- modo aprender ---
@@ -78,19 +89,19 @@ class Jogo:
 
     def _conferir(self, n):
         notas = self.alvo["notes"]
-        if n.midi != notas[self._idx]["midi"]:
+        if not bate(n, notas[self._idx]["midi"]):
             ev = self._divergir(n, "nota")
             # a nota errada pode ser o começo de uma nova tentativa
-            return [ev] + (self._conferir(n) if n.midi == notas[0]["midi"] else [])
+            return [ev] + (self._conferir(n) if bate(n, notas[0]["midi"]) else [])
         k = len(self._onsets)  # notas já aceitas; esta é a de índice k
         if k >= 2:
-            # escala (s/batida) dos intervalos já completos; confere o intervalo que acabou de fechar
+            # o intervalo que acabou de fechar precisa respeitar a relação com cada um dos anteriores
             ioi = np.diff(self._onsets)
-            escala = ioi.sum() / sum(a["beats"] for a in notas[: k - 1])
-            esperado = notas[k - 1]["beats"] * escala
             tocado = n.inicio - self._onsets[-1]
-            if abs(tocado - esperado) / esperado > self.tol:
-                return [self._divergir(n, "ritmo", esperado_s=round(esperado, 2), tocado_s=round(float(tocado), 2))]
+            e_novo = notas[k - 1]["beats"]
+            if not all(relacao_ok(tocado, t, e_novo, notas[i]["beats"]) for i, t in enumerate(ioi)):
+                escala = ioi.sum() / sum(a["beats"] for a in notas[: k - 1])  # s/batida, só para a mensagem
+                return [self._divergir(n, "ritmo", esperado_s=round(e_novo * escala, 2), tocado_s=round(float(tocado), 2))]
         self._onsets.append(n.inicio)
         self._idx += 1
         if self._idx == len(notas):

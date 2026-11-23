@@ -102,3 +102,25 @@ def test_ponta_a_ponta_sintetico(rep, ruido):
         notas = segmentar(analisar(x, 48000, "yin", hop=512), 512 / 48000)
         r = reconhecer(notas, rep)
         assert r is not None and r.id == c["id"], (c["id"], [n.midi for n in notas])
+
+
+
+def test_nota_alta_ainda_conta_como_a_esperada():
+    from ocarina_beat.reconhecedor import bate
+
+    do5_alto = NotaDetectada(73, 0, 1, -45.0)  # 72,55: lida como Dó#5 -45 cents
+    assert bate(do5_alto, 72)
+    assert not bate(NotaDetectada(74, 0, 1, 0.0), 72)  # um tom inteiro acima não conta
+    assert not bate(NotaDetectada(73, 0, 1, 0.0), 72)  # Dó#5 afinado não conta como Dó5
+
+
+def test_reconhece_cancao_tocada_desafinada(rep):
+    c = rep[0]
+    notas = tocar(c, n=c["reconhecer_primeiras"])
+    for i, x in enumerate(notas):  # todas ~45 cents altas, algumas lidas como o semitom de cima
+        if i % 2:
+            x.midi, x.cents_medio = x.midi + 1, -55.0
+        else:
+            x.cents_medio = 45.0
+    r = reconhecer(notas, rep)
+    assert r is not None and r.id == c["id"]

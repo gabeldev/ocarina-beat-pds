@@ -143,7 +143,7 @@ O áudio é uma sequência `x[n] = x(nT)`, com `T = 1/fs`, e o tempo de cada amo
 
 **Onde entra:**
 - O RMS, com limiar e histerese, decide se há som e marca início e fim de cada nota (silêncio, fala baixa e ruído de fundo não podem virar nota).
-- Um passa-altas ou passa-faixa FIR/IIR remove ruído grave (ventilador, vibração do suporte) antes do estimador. Será preciso conferir que a banda escolhida não corta as notas mais graves da flauta (Dó5, 523 Hz).
+- Um passa-faixa de 400 Hz a 5 kHz remove ruído grave (ventilador, vibração, rede elétrica) e chiado antes do estimador, sem cortar o Dó5 (523 Hz) nem o 2º harmônico do Lá6. Implementado em duas versões (`src/ocarina_beat/filtros.py`): IIR Butterworth de ordem 8 em seções de 2ª ordem (atraso ≈ 0,3 ms) e FIR de 255 coeficientes com janela de Hamming (fase linear, atraso ≈ 2,7 ms). O jogo usa o FIR: o IIR borrou notas muito curtas (≈ 50 ms) nos testes. Comparação no experimento E10.
 - Uma média móvel suaviza a curva de frequência entre janelas.
 - Estabilidade: se o jogo tocar a referência por alto-falante, o som volta ao microfone e pode gerar microfonia ou notas falsas. Por isso o microfone é ignorado enquanto o jogo toca; com fones o problema some.
 
@@ -157,13 +157,13 @@ A DFT amostra N pontos do espectro: `X[k] = Σ x[n] e^{−j2πkn/N}`, com bins e
 
 Polos, zeros e região de convergência descrevem um filtro. Um sistema causal só é estável com os polos dentro do círculo unitário; filtros FIR têm só zeros e são sempre estáveis.
 
-**Onde entra:** projetar e verificar a estabilidade dos filtros IIR usados no pré-processamento. Se usarmos só FIR, essa parte se reduz a justificar por que são estáveis.
+**Onde entra:** verificar a estabilidade do filtro IIR do pré-processamento: os 8 polos do Butterworth passa-faixa ficam dentro do círculo unitário (o módulo do maior é ≈ 0,98, perto da borda por causa do corte em 400 Hz a 48 kHz, o que explica a escolha de seções de 2ª ordem). O FIR só tem zeros e é sempre estável.
 
 ### 4.5 Frequência, nota e cents
 
 Posição MIDI `m = 69 + 12·log2(f/440)`; frequência da nota `f(k) = 440·2^((k−69)/12)`; desvio em cents `e = 1200·log2(f/f_ref)`.
 
-**Onde entra:** converter a frequência estimada em nota e medir o quanto ela está desafinada. A comparação com o repertório usa a nota esperada, não só o arredondamento para a mais próxima, com tolerância inicial de ±50 cents.
+**Onde entra:** converter a frequência estimada em nota e medir o quanto ela está desafinada. A comparação com o repertório usa a nota esperada, não só o arredondamento para a mais próxima, com tolerância de ±70 cents. Nos primeiros testes com a flauta, o Dó5 saiu cerca de 40 cents alto mesmo bem tocado (o Lá5 ficou afinado), e com ±50 cents ele seria lido como Dó♯5.
 
 ### 4.6 Autocorrelação e YIN
 
@@ -205,7 +205,7 @@ Máquina de estados: silêncio, ataque, nota ativa, liberação. A nota é confi
 | Pergunta | Resposta proposta |
 | --- | --- |
 | Reconhecimento absoluto ou relativo? | Absoluto (notas + durações proporcionais) para a flauta; relativo para o assobio, se adicionado. |
-| Qual tolerância de afinação? | Inicial ±50 cents; testar ±25 e ±35. |
+| Qual tolerância de afinação? | ±70 cents em torno da nota esperada (o Dó5 da flauta sai ~40 cents alto); medir o efeito de ±50 e ±35 na falsa aceitação. |
 | Ritmo exato ou proporcional? | Proporcional, por razões de duração, com tolerância a medir. |
 | Como voltar ao início após um erro? | Recomeçar do início da canção (modo Aprender). |
 | Como distinguir nota sustentada de nota repetida? | Exigir nova articulação (queda de energia ou novo ataque). |
@@ -255,7 +255,7 @@ Até agora há só testes com sinal sintético (experimento E01 e os testes auto
 
 **Metas iniciais propostas:** reconhecimento ≥ 90%, falsa aceitação ≤ 5%, acurácia de nota ≥ 90%, F1 de eventos ≥ 0,85, P95 de latência ≤ 200 ms, no máximo 1 falso evento por minuto de silêncio.
 
-**Experimentos:** (E01) sintéticos e silêncio; (E02) notas reais; (E03) repetição, legato e pausas; (E04) comparação de métodos de f0; (E05) janela, salto e confirmação; (E06) distância, intensidade e ruído; (E07) erros controlados; (E08) ponta a ponta ao vivo; (E09) pausa e captura interrompida.
+**Experimentos:** (E01) sintéticos e silêncio; (E10) efeito do filtro (sem filtro × IIR × FIR) no mesmo áudio, em `experimentos/e10_filtros.py`; (E02) notas reais; (E03) repetição, legato e pausas; (E04) comparação de métodos de f0; (E05) janela, salto e confirmação; (E06) distância, intensidade e ruído; (E07) erros controlados; (E08) ponta a ponta ao vivo; (E09) pausa e captura interrompida.
 
 ## 7. Plano de trabalho
 
@@ -277,13 +277,13 @@ Até agora há só testes com sinal sintético (experimento E01 e os testes auto
 | # | Tarefa | Responsável | Depende da flauta | Situação |
 | --- | --- | --- | --- | --- |
 | 1 | Ambiente: Godot, Blender e Krita; ambiente Python (`pytest`, `--simular`) | Gabriel e Elder | Não | Gabriel feito |
-| 2 | Gravador de sessões com rótulos (WAV + metadados: canção, executante, condição) | Elder | Não | Pendente |
+| 2 | Gravador de sessões com rótulos (WAV + metadados: canção, executante, condição) | Elder | Não | Feito |
 | 3 | Serviço UDP que publica os eventos do jogo em JSON e recebe comandos | Gabriel | Não | Feito |
 | 4 | Projeto Godot lendo os eventos | Gabriel | Não | Feito |
 | 5 | Arte 3D própria: personagem e cenário modelados no Blender por script | Gabriel | Não | Feito |
-| 6 | Filtro passa-faixa FIR/IIR e medição do efeito na estimativa de f0 | Elder | Não | Pendente |
+| 6 | Filtro passa-faixa FIR/IIR e medição do efeito na estimativa de f0 | Elder | Não | Filtros feitos; falta medir com gravações |
 | 7 | Perfil de parâmetros por instrumento (limiares e tolerâncias num só lugar) | Elder | Não | Pendente |
-| 8 | Limiar de silêncio automático e aviso de ganho baixo ou saturado | Elder | Não | Pendente |
+| 8 | Limiar de silêncio automático e aviso de ganho baixo ou saturado | Elder | Não | Feito (ganho automático) |
 | 9 | Ferramentas de avaliação (reconhecimento, falsa aceitação, F1, matriz de confusão, latência P95) | Elder | Não | Pendente |
 | 10 | Gravar as sessões com a flauta (notas sustentadas, 6 canções, erros, silêncio, fala, ruído) | Gabriel e Elder | Sim | Pendente |
 | 11 | Calibrar afinação e limiares; conferir erro de oitava e notas rápidas | Elder | Sim | Pendente |
@@ -312,6 +312,16 @@ PYTHONPATH=src .venv/bin/python -m ocarina_beat.servidor   # --mudo para não to
 ```
 
 No menu, "Entrada: Demonstração (sem flauta)" faz o serviço simular a canção, para apresentar sem o instrumento.
+
+**Gravar sessões rotuladas** (WAV + metadados em `dados/brutos/`, fora do Git):
+
+```bash
+PYTHONPATH=src .venv/bin/python -m ocarina_beat.gravador --tipo cancao --alvo epona_song --executante gabriel
+PYTHONPATH=src .venv/bin/python -m ocarina_beat.gravador --tipo nota --alvo A5 --executante gabriel --segundos 8
+PYTHONPATH=src .venv/bin/python -m ocarina_beat.gravador --tipo silencio --executante gabriel --condicao "ventilador ligado"
+PYTHONPATH=src .venv/bin/python -m ocarina_beat.gravador --listar
+PYTHONPATH=src .venv/bin/python experimentos/e10_filtros.py   # compara os filtros nas gravações
+```
 
 **Terminal (sem Godot):**
 

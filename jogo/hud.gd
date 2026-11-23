@@ -10,6 +10,7 @@ const VERDE := Color("8DE0A0")
 const VERMELHO := Color("E07A5F")
 const SOLFEJO := {"C": "DÓ", "D": "RÉ", "E": "MI", "F": "FÁ", "G": "SOL", "A": "LÁ", "B": "SI"}
 const ORDEM := ["C", "D", "E", "F", "G", "A", "B"]
+const FlautaDedilhado := preload("res://flauta_dedilhado.gd")
 
 var _fonte_titulo: SystemFont
 var _lbl_titulo: Label
@@ -21,8 +22,11 @@ var _notas_barra := {}  # letra -> {rotulo, ponto}
 var _fundo_destaque: Panel
 var _linha_seq: HBoxContainer
 var _medidor: ProgressBar
+var _flauta: FlautaDedilhado
 var _seq: Array = []  # nomes das notas da canção (modo aprender) ou histórico (livre)
-var _modo_aprender := false
+var _exibe_cancao := false
+var _guia_ativo := false
+var _referencia := -1
 var _tocadas := 0
 var _tween_msg: Tween
 
@@ -34,6 +38,7 @@ func _ready() -> void:
 	_montar_titulo()
 	_montar_barra()
 	_montar_sequencia()
+	_montar_flauta()
 	_montar_mensagem()
 
 
@@ -46,11 +51,14 @@ func ajuda(txt: String) -> void:
 	_lbl_ajuda.text = txt
 
 
+func _solfejo(nome: String) -> String:
+	return SOLFEJO.get(nome.left(1), nome) + ("♯" if nome.contains("#") else "")
+
+
 func nota(nome: String) -> void:
-	var letra := nome.substr(0, 1)
+	var letra := nome.left(1)
 	var sustenido := nome.contains("#")
-	var solf: String = SOLFEJO.get(letra, nome) + ("♯" if sustenido else "")
-	_lbl_reconhecida.text = solf
+	_lbl_reconhecida.text = _solfejo(nome)
 	for l in _notas_barra:
 		var item: Dictionary = _notas_barra[l]
 		var ativo: bool = l == letra
@@ -66,8 +74,8 @@ func nota(nome: String) -> void:
 		var t := create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		t.tween_property(_fundo_destaque, "global_position", r.position - Vector2(14, 4), 0.12)
 		_fundo_destaque.size = r.size + Vector2(28, 8)
-	if not _modo_aprender:
-		_seq.append(solf)
+	if not _exibe_cancao:
+		_seq.append(nome)
 		if _seq.size() > 8:
 			_seq.pop_front()
 		_desenhar_sequencia()
@@ -81,27 +89,28 @@ func nivel(v: float) -> void:
 	_medidor.value = v
 
 
-## modo aprender: notas da canção; [] volta ao histórico do modo livre
-func sequencia(nomes: Array) -> void:
-	_modo_aprender = nomes.size() > 0
-	_seq = []
-	for n in nomes:
-		_seq.append(SOLFEJO.get(String(n).substr(0, 1), n) + ("♯" if String(n).contains("#") else ""))
+## Uma canção reconhecida no modo livre exibe a sequência sem o guia de dedilhado.
+func sequencia(nomes: Array, com_dedilhado := true) -> void:
+	_seq = nomes.duplicate()
+	_exibe_cancao = not _seq.is_empty()
+	_guia_ativo = _exibe_cancao and com_dedilhado
 	_tocadas = 0
+	_referencia = -1
+	_atualizar_flauta(false)
 	_desenhar_sequencia()
 
 
-## destaca a nota da sequência que está soando na referência (-1 limpa)
-var _referencia := -1
-
-
+## Destaca a nota que está soando. Ao terminar, retoma a próxima nota esperada.
 func destacar_referencia(indice: int) -> void:
 	_referencia = indice
+	_atualizar_flauta()
 	_desenhar_sequencia()
 
 
 func progresso(tocadas: int) -> void:
 	_tocadas = tocadas
+	_referencia = -1
+	_atualizar_flauta()
 	_desenhar_sequencia()
 
 
@@ -249,12 +258,35 @@ func _montar_sequencia() -> void:
 	add_child(_linha_seq)
 
 
+func _montar_flauta() -> void:
+	_flauta = FlautaDedilhado.new()
+	_flauta.add_theme_stylebox_override("panel", _caixa(PAINEL))
+	_flauta.add_theme_font_override("font", _fonte_titulo)
+	_flauta.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_flauta)
+	_flauta.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_flauta.offset_right = -30
+	_flauta.offset_left = _flauta.offset_right - FlautaDedilhado.TAMANHO.x
+	_flauta.offset_top = 72
+	_flauta.offset_bottom = _flauta.offset_top + FlautaDedilhado.TAMANHO.y
+	_flauta.hide()
+
+
+func _atualizar_flauta(animar := true) -> void:
+	var indice := _referencia if _referencia >= 0 else _tocadas
+	var estava_visivel := _flauta.visible
+	_flauta.visible = _guia_ativo and indice >= 0 and indice < _seq.size()
+	if _flauta.visible:
+		var nome: String = _seq[indice]
+		_flauta.mostrar_nota(nome, _solfejo(nome), _referencia >= 0, animar and estava_visivel)
+
+
 func _desenhar_sequencia() -> void:
 	for c in _linha_seq.get_children():
 		c.queue_free()
 	for i in _seq.size():
-		var feita := _modo_aprender and i < _tocadas
-		var proxima := _modo_aprender and i == _tocadas and _referencia < 0
+		var feita := _exibe_cancao and i < _tocadas
+		var proxima := _exibe_cancao and i == _tocadas and _referencia < 0
 		var soando := i == _referencia
 		var cor := Color(0.12, 0.17, 0.24, 0.72)
 		if feita:
@@ -271,10 +303,10 @@ func _desenhar_sequencia() -> void:
 			st.border_color = AMBAR
 			st.set_border_width_all(2)
 		chip.add_theme_stylebox_override("panel", st)
-		var txt_cor := CREME if (feita or proxima or not _modo_aprender) else Color(CREME, 0.55)
+		var txt_cor := CREME if (feita or proxima or not _exibe_cancao) else Color(CREME, 0.55)
 		if soando:
 			txt_cor = Color("1B2433")
-		chip.add_child(_rotulo(_seq[i], 18, txt_cor))
+		chip.add_child(_rotulo(_solfejo(_seq[i]), 18, txt_cor))
 		_linha_seq.add_child(chip)
 
 

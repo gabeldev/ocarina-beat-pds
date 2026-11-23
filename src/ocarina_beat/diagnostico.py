@@ -12,6 +12,7 @@ import numpy as np
 
 from .captura import abrir_entrada, listar_entradas
 from .estimador import METODOS, rms
+from .ganho import ControleGanho
 from .instrumento import INSTRUMENTOS, PADRAO
 from .notas import nome_nota, nota_mais_proxima
 
@@ -30,6 +31,7 @@ def main():
     ap.add_argument("--segundos", type=float, default=10.0)
     ap.add_argument("--metodo", choices=sorted(METODOS), default="yin")
     ap.add_argument("--instrumento", choices=sorted(INSTRUMENTOS), default=PADRAO)
+    ap.add_argument("--sem-ganho-automatico", action="store_true", help="não ajusta o volume do microfone")
     args = ap.parse_args()
 
     if args.listar:
@@ -44,6 +46,9 @@ def main():
     print(f"Taxa pedida: {info.fs_pedida} Hz | efetiva: {info.fs_efetiva:.0f} Hz | latência: {info.latencia_s * 1000:.1f} ms")
     print(f"Método: {args.metodo} | janela: {JANELA} amostras ({1000 * JANELA / info.fs_efetiva:.1f} ms) | faixa: {FMIN:.0f}-{FMAX:.0f} Hz\n")
     metodo = METODOS[args.metodo]
+    ganho = None if args.sem_ganho_automatico else ControleGanho()
+    if ganho is not None:
+        print(f"Ganho automático: {'ligado, volume do microfone ' + format(ganho.atual, '.0%') if ganho.ativo else 'indisponível (sem wpctl)'}\n")
 
     buf = np.zeros(JANELA, dtype=np.float32)
     pico, estouros, blocos = 0.0, 0, 0
@@ -55,9 +60,14 @@ def main():
             blocos += 1
             x = bloco[:, 0]
             buf = np.concatenate([buf[len(x):], x])
-            pico = max(pico, float(np.abs(x).max()))
+            if blocos * 1024 / info.fs_efetiva > 0.5:  # ignora o estalo ao abrir o microfone
+                pico = max(pico, float(np.abs(x).max()))
             nivel = rms(buf)
             f0, conf = metodo(buf, info.fs_efetiva, FMIN, FMAX)
+            if ganho is not None:
+                mud = ganho.observar(x, f0 is not None)
+                if mud:
+                    print(f"  >> volume do microfone ajustado para {mud['volume']:.0%} ({mud['motivo']})")
             barra = "#" * int(max(0, (dbfs(nivel) + 80) / 2))
             if f0 is None:
                 print(f"{dbfs(nivel):6.1f} dBFS  {'-':>9}  {'-':>4}  {'':>8}  {barra}")

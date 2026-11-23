@@ -32,7 +32,7 @@ Todos têm `tipo`. Tempos `t` em segundos desde o início da fonte de áudio.
 
 | `tipo` | Campos | Quando |
 | --- | --- | --- |
-| `estado` | `modo`, `alvo`, `instrumento`, `ouvindo`, `microfone`, `sons`, `aprendidas` | Ao iniciar e quando algo muda. |
+| `estado` | `modo`, `alvo`, `instrumento`, `ouvindo`, `microfone`, `ganho_automatico`, `sons`, `aprendidas` | Ao iniciar e quando algo muda. |
 | `cancoes` | `lista`: `[{id, nome, notas, beats, reconhecer_primeiras}]` | Resposta a `cancoes`. |
 | `nivel` | `t`, `dbfs`, `midi`, `nome` | ~20 vezes por segundo. `midi` e `nome` são `null` quando não há tom. Serve para animar o personagem. |
 | `nota` | `t`, `midi`, `nome`, `cents` | Uma nota nova foi confirmada. |
@@ -42,6 +42,7 @@ Todos têm `tipo`. Tempos `t` em segundos desde o início da fonte de áudio.
 | `completa` | `t`, `id`, `nome` | Modo aprender: terminou a canção. |
 | `incompleta` | `t`, `tocadas`, `total` | Modo aprender: 6 s sem nova nota. |
 | `fim_audio` | | A fonte simulada ou de arquivo acabou. |
+| `ganho` | `volume` (0–1), `motivo` (`saturacao` ou `fraco`) | O serviço ajustou sozinho o volume do microfone do sistema. |
 | `audio_inicio` | `som` (`referencia`, `cancao`, `sucesso` ou `erro`), `duracao` | O serviço começou a tocar um som. O microfone é ignorado até o fim dele (mais 0,3 s). |
 | `audio_fim` | `som` | O som terminou. |
 | `referencia` | `indice`, `nome` | Durante `ouvir` (som `referencia`) ou depois de uma canção reconhecida no modo livre (som `cancao`): a nota `indice` está soando agora. |

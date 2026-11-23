@@ -20,6 +20,7 @@ signal cancoes(dados: Dictionary)       ## {lista: [{id, nome, notas, beats, rec
 signal erro(dados: Dictionary)
 signal audio_inicio(dados: Dictionary)  ## {som, duracao}: o serviço começou a tocar
 signal audio_fim(dados: Dictionary)     ## {som}
+signal ganho(dados: Dictionary)         ## {volume, motivo}: volume do microfone ajustado sozinho
 signal referencia(dados: Dictionary)    ## {indice, nome}: nota da referência soando agora
 
 const HOST := "127.0.0.1"

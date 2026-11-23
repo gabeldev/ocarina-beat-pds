@@ -15,6 +15,7 @@ from pathlib import Path
 import numpy as np
 
 from . import audio, fontes
+from .ganho import ControleGanho
 from .instrumento import INSTRUMENTOS, PADRAO
 from .jogo import Jogo
 from .motor import Processador
@@ -31,7 +32,7 @@ def _tocar_sem_bloquear(x, fs):
 
 class Servidor:
     def __init__(self, rep, instrumento=PADRAO, porta_eventos=9000, porta_comandos=9001, host="127.0.0.1",
-                 sons=True, tocador=None):
+                 sons=True, tocador=None, ganho=None):
         self.rep, self.instrumento = rep, instrumento
         self.por_id = {c["id"]: c for c in rep}
         self.destino = (host, porta_eventos)
@@ -50,6 +51,8 @@ class Servidor:
         self._ao_vivo = False  # fonte é o microfone (precisa silenciar durante o som do jogo)
         self._mudo_ate = 0.0  # relógio (time.time) até quando o microfone é ignorado
         self._agenda = []  # [(instante, tipo, dados)] eventos a enviar no tempo certo
+        self._ganho_fixo = ganho  # para testes; senão o controle é criado ao abrir o microfone
+        self.ganho = None
 
     # --- saída ---
     def enviar(self, tipo, **dados):
@@ -59,6 +62,7 @@ class Servidor:
     def estado(self):
         self.enviar("estado", modo=self.modo, alvo=self.alvo, instrumento=self.instrumento,
                     ouvindo=self.fonte is not None, microfone=self._ao_vivo and self.fonte is not None,
+                    ganho_automatico=bool(self.ganho and self.ganho.ativo),
                     sons=self.sons, aprendidas=sorted(self.jogo.aprendidas))
 
     # --- som do jogo ---
@@ -134,6 +138,7 @@ class Servidor:
             elif cmd == "microfone":
                 fs, blocos, _ = fontes.microfone(msg.get("dispositivo"))
                 self._iniciar_fonte(fs, blocos, ao_vivo=True)
+                self.ganho = self._ganho_fixo or ControleGanho()
             elif cmd == "ouvir":
                 c = self.por_id.get(msg.get("id") or self.alvo)
                 if c is None:
@@ -181,9 +186,15 @@ class Servidor:
             self.fonte = None
             self.enviar("fim_audio")
             return self.estado()
-        if self._ao_vivo and time.time() < self._mudo_ate:
+        mudo = self._ao_vivo and time.time() < self._mudo_ate
+        if mudo:
             bloco = np.zeros_like(bloco)  # o som do próprio jogo não pode virar nota
         quadros = self.proc.alimentar(bloco)
+        if self._ao_vivo and not mudo and self.ganho is not None:
+            tem_tom = any(q.midi is not None for q in quadros)
+            mud = self.ganho.observar(bloco, tem_tom)
+            if mud:
+                self.enviar("ganho", **mud)
         for ev in self.jogo.atualizar(self.proc.notas, self.proc.tempo):
             self.enviar(ev.tipo, t=round(ev.t, 3), **ev.dados)
             self._som_do_evento(ev)

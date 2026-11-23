@@ -39,6 +39,7 @@ func _ready() -> void:
 	Ponte.erro.connect(func(d): hud.mensagem(d.mensagem, "erro"))
 	Ponte.referencia.connect(_ao_referencia)
 	Ponte.audio_fim.connect(_ao_audio_fim)
+	Ponte.ganho.connect(func(d): hud.mensagem("Ajustando o microfone (%d%%)" % roundi(float(d.volume) * 100), "info"))
 
 	menu.aprender.connect(_iniciar_aprender)
 	menu.livre.connect(_iniciar_livre)
@@ -130,7 +131,7 @@ func _ao_reconhecida(d: Dictionary) -> void:
 	# a canção reconhecida vai tocar inteira: mostra as notas dela acendendo
 	var c := _cancao(d.id)
 	if not c.is_empty():
-		hud.sequencia(c.notas)
+		hud.sequencia(c.notas, false)
 
 
 func _ao_audio_fim(d: Dictionary) -> void:

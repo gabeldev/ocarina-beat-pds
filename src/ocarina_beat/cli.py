@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 from . import audio, fontes
+from .ganho import ControleGanho
 from .instrumento import INSTRUMENTOS, PADRAO
 from .jogo import Jogo
 from .motor import Processador
@@ -92,11 +93,16 @@ def main(argv=None):
         fs, blocos, info = fontes.microfone(args.dispositivo, args.segundos)
         print(f"[entrada] {info.nome} @ {info.fs_efetiva:.0f} Hz, latência {info.latencia_s * 1000:.0f} ms", file=sys.stderr)
 
+    ganho = ControleGanho() if not (args.simular or args.arquivo) else None
     proc = Processador(fs, args.instrumento)
     jogo = Jogo(rep, args.comando, args.alvo)
     ao_vivo = not (args.simular or args.arquivo)
     for bloco in blocos:
-        proc.alimentar(bloco)
+        quadros = proc.alimentar(bloco)
+        if ganho is not None:
+            mud = ganho.observar(bloco, any(q.midi is not None for q in quadros))
+            if mud:
+                print(f"[microfone] volume ajustado para {mud['volume']:.0%} ({mud['motivo']})", file=sys.stderr)
         for ev in jogo.atualizar(proc.notas, proc.tempo):
             print(_linha(ev, args.json), flush=True)
             if ao_vivo and not args.mudo:

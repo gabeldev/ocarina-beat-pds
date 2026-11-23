@@ -54,12 +54,40 @@ def test_aprender_nota_errada_que_e_a_primeira_ja_conta():
 
 
 def test_aprender_ritmo_errado():
+    # CANCAO: D5(1) F5(1) G5(2) F5(1) D5(1). A nota longa (G5) tocada curta inverte o ritmo
     j = Jogo([CANCAO], "aprender", "teste")
-    ev = executar(j, [(74, 1), (77, 1), (79, 0.5)])  # terceira nota entra cedo demais? o IOI da 2ª fecha
-    assert "divergencia" not in tipos(ev)  # só o 2º intervalo (1) foi medido e não há referência
-    ev = executar(j, [(77, 3)], t0=4.0)  # 4ª nota chega com intervalo triplo do esperado
+    ev = executar(j, [(74, 1), (77, 1), (79, 0.4), (77, 1)])
     d = [e for e in ev if e.tipo == "divergencia"]
-    assert d and d[0].dados["motivo"] == "ritmo"
+    assert d and d[0].dados["motivo"] == "ritmo" and d[0].dados["posicao"] == 3
+
+
+def test_aprender_tolera_ritmo_de_iniciante():
+    # curtas um pouco desiguais e a longa só 1,5x mais longa: a estrutura está certa
+    j = Jogo([CANCAO], "aprender", "teste")
+    ev = executar(j, [(74, 1), (77, 1.6), (79, 2.4), (77, 1.2), (74, 1)])
+    assert "divergencia" not in tipos(ev) and tipos(ev)[-1] == "completa"
+
+
+def test_livre_reconhece_ritmo_de_iniciante():
+    # tentativa real na flauta (Epona's Song): curtas desiguais, longa a mais longa
+    ep = {"id": "ep", "nome": "Ep", "reconhecer_primeiras": 6,
+          "notes": [{"midi": m, "beats": b} for m, b in [(86, .5), (83, .5), (81, 2), (86, .5), (83, .5), (81, 2)]]}
+    j = Jogo([ep], "livre")
+    inicios = [7.58, 8.35, 9.74, 11.87, 12.41, 13.16]
+    notas = []
+    ev = []
+    for m, t in zip([86, 83, 81, 86, 83, 81], inicios):
+        notas.append(NotaDetectada(m, t, t + 0.3, -30.0))
+        ev += j.atualizar(notas, t)
+    assert [e.dados["id"] for e in ev if e.tipo == "reconhecida"] == ["ep"]
+
+
+def test_livre_recusa_notas_todas_iguais():
+    ep = {"id": "ep", "nome": "Ep", "reconhecer_primeiras": 6,
+          "notes": [{"midi": m, "beats": b} for m, b in [(86, .5), (83, .5), (81, 2), (86, .5), (83, .5), (81, 2)]]}
+    j = Jogo([ep], "livre")
+    ev = executar(j, [(86, 1), (83, 1), (81, 1), (86, 1), (83, 1), (81, 1)])
+    assert "reconhecida" not in tipos(ev)
 
 
 def test_aprender_timeout():
@@ -98,7 +126,7 @@ def test_motor_em_fluxo_igual_ao_lote():
     x = audio.cancao(CANCAO, bpm=100)
     x = np.concatenate([np.zeros(FS // 2), x, np.zeros(FS)])
     lote = segmentar(analisar(x, FS, hop=512), 512 / FS)
-    p = Processador(FS)
+    p = Processador(FS, filtro=None)  # o lote não filtra; aqui só se compara fluxo x lote
     for i in range(0, len(x), 700):  # blocos de tamanho irregular
         p.alimentar(x[i : i + 700])
     fluxo = p.finalizar()
@@ -164,3 +192,12 @@ def test_repertorio_real_nos_dois_modos(bpm):
         assert livre == [c["id"]], (c["id"], livre)
         ap = _rodar(rep, "aprender", c["id"], c, bpm)
         assert tipos(ap)[-1] == "completa" and "divergencia" not in tipos(ap), c["id"]
+
+
+
+def test_aprender_aceita_nota_alta_e_mostra_a_esperada():
+    j = Jogo([CANCAO], "aprender", "teste")
+    notas = [NotaDetectada(75, 1.0, 1.4, -45.0)]  # D5 esperado (74) tocado +55 cents: lido como D#5 -45
+    ev = j.atualizar(notas, 1.0)
+    assert [e.tipo for e in ev] == ["nota", "progresso"]
+    assert ev[0].dados["nome"] == "D5" and ev[0].dados["cents"] == 55.0

@@ -72,9 +72,21 @@ def test_tempos_consistentes_em_todos_os_fechamentos():
 
 
 def test_troca_de_nota_nao_perde_quadros_do_candidato():
-    n = segmentar(Q([74] * 4 + [77] * 4), 0.1)
+    n = segmentar(Q([74] * 10 + [77] * 10), 0.1)
     assert abs(n[0].fim - n[1].inicio) < 1e-9
-    assert abs(n[1].duracao - 0.4) < 1e-9
+    assert abs(n[1].duracao - 1.0) < 1e-9
+
+
+def test_nota_de_passagem_na_troca_de_dedilhado_e_ignorada():
+    # Ré6 -> (Lá#5 por ~50 ms ao mudar os dedos) -> Si5, sem silêncio entre elas
+    midis = [86] * 30 + [82] * 5 + [83] * 30
+    n = segmentar(Q(midis, hop=0.0107), 0.0107)
+    assert [x.midi for x in n] == [86, 83]
+
+
+def test_nota_curta_depois_de_silencio_continua_valendo():
+    n = segmentar(Q([None] * 3 + [86] * 4 + [None] * 3), 0.0107)
+    assert [x.midi for x in n] == [86]
 
 
 def test_glitch_apos_silencio_nao_atrapalha_ataque():
@@ -91,3 +103,23 @@ def test_reataque_com_vale_sem_f0():
 def test_cents_medio():
     n = segmentar(Q([74.2] * 4), 0.1)[0]
     assert abs(n.cents_medio - 20) < 1e-6
+
+
+
+def test_ataque_baixo_nao_define_a_nota():
+    # "tu" começa ~90 cents baixo (lido como C#6) e sobe para D6 -30: a nota é D6
+    midis = [85.1, 85.2, 85.3] + [85.7] * 30
+    n = segmentar(Q(midis, hop=0.0107), 0.0107)
+    assert [x.midi for x in n] == [86] and abs(n[0].cents_medio + 30) < 3
+
+
+def test_nota_em_andamento_so_aparece_depois_do_ataque():
+    from ocarina_beat.segmentador import Segmentador
+
+    s = Segmentador(0.0107)
+    for q in Q([None] * 3 + [85.2, 85.3, 85.7, 85.7], hop=0.0107):
+        s.alimentar(q)
+    assert s.atual is None  # 4 quadros: ainda no ataque
+    for q in Q([85.7] * 3, hop=0.0107):
+        s.alimentar(q)
+    assert s.atual is not None and s.atual.midi == 86
